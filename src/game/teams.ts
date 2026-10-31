@@ -32,7 +32,7 @@ export const NATIONAL_TEAMS: readonly NationalTeam[] = [
   { id: "egy", name: "Египет", shortName: "EGY", flag: "🇪🇬", confederation: "Africa", crest: { initials: "E", primary: "#b63b36", secondary: "#d7b34e", accent: "#263b36", motif: "sun" } },
   { id: "bra", name: "Бразилия", shortName: "BRA", flag: "🇧🇷", confederation: "Americas", crest: { initials: "B", primary: "#24764a", secondary: "#e6c64e", accent: "#28559a", motif: "laurel" } },
   { id: "usa", name: "США", shortName: "USA", flag: "🇺🇸", confederation: "Americas", crest: { initials: "U", primary: "#24477d", secondary: "#f3eee5", accent: "#b84049", motif: "star" } },
-  { id: "eng", name: "Англия", shortName: "ENG", flag: "🏴", confederation: "Europe", crest: { initials: "E", primary: "#c83e46", secondary: "#f4f0e9", accent: "#274c7b", motif: "laurel" } },
+  { id: "aut", name: "Австрия", shortName: "AUT", flag: "🇦🇹", confederation: "Europe", crest: { initials: "A", primary: "#c83e46", secondary: "#f4f0e9", accent: "#274c7b", motif: "laurel" } },
 ] as const;
 
 export function getNationalTeam(id: string): NationalTeam | undefined {
