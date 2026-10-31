@@ -3,9 +3,9 @@ import { DEFAULT_INPUT, TABLE, type PaddleInput, type TableTennisSim, type Vec3 
 export type Difficulty = "easy" | "normal" | "hard";
 
 const LEVELS = {
-  easy: { reaction: 0.075, speed: 0.78, error: 0.055, anticipation: 0.10 },
-  normal: { reaction: 0.040, speed: 0.95, error: 0.022, anticipation: 0.18 },
-  hard: { reaction: 0.018, speed: 1.10, error: 0.006, anticipation: 0.30 },
+  easy: { reaction: 0.055, speed: 1.08, error: 0.055, anticipation: 0.18 },
+  normal: { reaction: 0.032, speed: 1.22, error: 0.022, anticipation: 0.24 },
+  hard: { reaction: 0.018, speed: 1.38, error: 0.006, anticipation: 0.34 },
 } as const;
 
 const AI_RACKET_Z = -1.48;
