@@ -26,6 +26,8 @@ function predictIntercept(sim: TableTennisSim): { x: number; y: number; time: nu
   let v = { ...ball.v };
   let spin = { ...ball.spin };
   let previousZ = p.z;
+  let predictedBounces = ball.bounces;
+  const isServe = ball.serve;
   const dt = 1 / 240;
   const tableTop = TABLE.y + TABLE.ballRadius;
 
@@ -53,9 +55,16 @@ function predictIntercept(sim: TableTennisSim): { x: number; y: number; time: nu
       spin.x *= 0.91;
       spin.y *= 0.94;
       spin.z *= 0.91;
+      predictedBounces += 1;
+      // The authoritative simulation applies extra forward-speed loss on the
+      // first serve bounce. Mirror it so the AI does not aim for an illegal,
+      // pre-second-bounce interception point.
+      if (isServe && predictedBounces === 1) v.z *= 0.62;
     }
 
     if (previousZ > planeZ && p.z <= planeZ) {
+      const requiredBounces = isServe ? 2 : 1;
+      if (predictedBounces < requiredBounces) return null;
       const fraction = clamp((previousZ - planeZ) / Math.max(1e-6, previousZ - p.z), 0, 1);
       return {
         x: previous.x + (p.x - previous.x) * fraction,
