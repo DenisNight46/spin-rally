@@ -3,7 +3,7 @@ import { Bot, Check, ChevronLeft, CircleHelp, Copy, MousePointer2, Palette, Paus
 import { startGame, stopGame } from "@/game/boot";
 import type { GameController, GameUIState } from "@/game/types";
 import type { Difficulty } from "@/game/ai";
-import { NATIONAL_TEAMS, NATIONAL_TEAM_FLAG_CODES, getNationalTeam, type Confederation, type NationalTeam } from "@/game/teams";
+import { NATIONAL_TEAMS, NATIONAL_TEAM_FLAG_CODES, getNationalTeam, getTeamsByConfederation, type Confederation, type NationalTeam } from "@/game/teams";
 import { storage } from "@/game/storage";
 
 type Panel = "main" | "single" | "online" | "settings" | "help";
@@ -25,7 +25,7 @@ export default function Home() {
   const [copied, setCopied] = useState(false);
   const [selectedTeamId, setSelectedTeamId] = useState(() => storage.get<string>("spinRally.team", "rus"));
   const [teamRegion, setTeamRegion] = useState<Confederation | "All">("All");
-  const visibleTeams = teamRegion === "All" ? NATIONAL_TEAMS : NATIONAL_TEAMS.filter((team) => team.confederation === teamRegion);
+  const visibleTeams = getTeamsByConfederation(teamRegion);
   const selectedTeam = getNationalTeam(selectedTeamId) ?? NATIONAL_TEAMS[11];
   const rivalTeam = getNationalTeam("chn") ?? NATIONAL_TEAMS[0];
   const teamForSide = (side: 0 | 1) => side === (ui?.ownSide ?? 0) ? selectedTeam : rivalTeam;
