@@ -99,4 +99,38 @@ describe("table tennis ball physics", () => {
     }
     expect(hit, `AI return diagnostics:\n${JSON.stringify({ finalPhase: sim.state.phase, finalMessage: sim.state.message, finalBall: sim.state.ball, trace }, null, 2)}`).toBe(true);
   });
+
+  it("varies AI service placement across the legal table width", () => {
+    const sim = new TableTennisSim(19);
+    const ai = new TableTennisAI("hard");
+    sim.startMatch();
+    const placements: number[] = [];
+
+    for (let serve = 0; serve < 5; serve += 1) {
+      sim.state.phase = "serve";
+      sim.state.server = 1;
+      sim.state.ball.serve = true;
+      sim.state.ball.bounces = 0;
+      sim.state.paddles[1].x = 0;
+      let lastEvent = sim.state.eventId;
+
+      for (let frame = 0; frame < 120 && sim.state.phase === "serve"; frame += 1) {
+        ai.update(sim, 1 / 60);
+        sim.step(1 / 120);
+        sim.step(1 / 120);
+        if (sim.state.eventId !== lastEvent) {
+          lastEvent = sim.state.eventId;
+          if (sim.state.event?.type === "serve" && sim.state.event.p) {
+            placements.push(sim.state.event.p.x);
+          }
+        }
+      }
+      expect(sim.state.phase).toBe("rally");
+    }
+
+    expect(placements).toHaveLength(5);
+    expect(new Set(placements.map((x) => x.toFixed(2))).size).toBeGreaterThanOrEqual(4);
+    expect(placements.every((x) => Math.abs(x) <= 0.65)).toBe(true);
+  });
+
 });
