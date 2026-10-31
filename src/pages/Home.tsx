@@ -3,6 +3,8 @@ import { Bot, Check, ChevronLeft, CircleHelp, Copy, MousePointer2, Palette, Paus
 import { startGame, stopGame } from "@/game/boot";
 import type { GameController, GameUIState } from "@/game/types";
 import type { Difficulty } from "@/game/ai";
+import { NATIONAL_TEAMS, getNationalTeam, type NationalTeam } from "@/game/teams";
+import { storage } from "@/game/storage";
 
 type Panel = "main" | "single" | "online" | "settings" | "help";
 
@@ -21,6 +23,11 @@ export default function Home() {
   const [panel, setPanel] = useState<Panel>("main");
   const [roomCode, setRoomCode] = useState("");
   const [copied, setCopied] = useState(false);
+  const [selectedTeamId, setSelectedTeamId] = useState(() => storage.get<string>("spinRally.team", "rus"));
+  const selectedTeam = getNationalTeam(selectedTeamId) ?? NATIONAL_TEAMS[11];
+  const rivalTeam = getNationalTeam("chn") ?? NATIONAL_TEAMS[0];
+  const teamForSide = (side: 0 | 1) => side === (ui?.ownSide ?? 0) ? selectedTeam : rivalTeam;
+  const chooseTeam = (id: string) => { setSelectedTeamId(id); storage.set("spinRally.team", id); };
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -144,6 +151,7 @@ export default function Home() {
                     <ColorPicker label="Цвет формы" value={ui.settings.kit} onChange={(value) => updateColor("kit", value)} />
                     <ColorPicker label="Цвет ракетки" value={ui.settings.paddle} onChange={(value) => updateColor("paddle", value)} />
                     <ColorPicker label="Цвет мяча" value={ui.settings.ball} onChange={(value) => updateColor("ball", value)} />
+                    <div className="team-picker"><div className="team-picker-heading"><b>НАЦИОНАЛЬНАЯ СБОРНАЯ</b><small>Флаг и эмблема появятся на табло</small></div><div className="team-grid">{NATIONAL_TEAMS.map((team) => <button type="button" key={team.id} className={`team-option ${selectedTeam.id === team.id ? "selected" : ""}`} onClick={() => chooseTeam(team.id)} aria-pressed={selectedTeam.id === team.id}><TeamCrest team={team} /><span className="team-flag">{team.flag}</span><span>{team.name}</span></button>)}</div></div>
                     <div className="preview-note"><span className="preview-ball" style={{ background: ui.settings.ball }} /> В сетевом матче используется мяч хозяина комнаты</div>
                   </>
                 )}
@@ -169,9 +177,9 @@ export default function Home() {
             <div className="game-topbar">
               <button className="icon-button glass" onClick={goTitle} aria-label="Выйти в меню"><X size={20} /></button>
               <div className="scoreboard glass-strong">
-                <PlayerScore name={ui.players[0].name} color={ui.players[0].kit} score={ui.state.scores[0]} games={ui.state.games[0]} serving={ui.state.server === 0 && ui.state.phase === "serve"} />
+                <PlayerScore name={ui.players[0].name} color={ui.players[0].kit} team={teamForSide(0)} score={ui.state.scores[0]} games={ui.state.games[0]} serving={ui.state.server === 0 && ui.state.phase === "serve"} />
                 <div className="score-center"><span>ПАРТИЯ {ui.state.gameNumber}</span><b>:</b><small>до 2 побед</small></div>
-                <PlayerScore name={ui.players[1].name} color={ui.players[1].kit} score={ui.state.scores[1]} games={ui.state.games[1]} serving={ui.state.server === 1 && ui.state.phase === "serve"} right />
+                <PlayerScore name={ui.players[1].name} color={ui.players[1].kit} team={teamForSide(1)} score={ui.state.scores[1]} games={ui.state.games[1]} serving={ui.state.server === 1 && ui.state.phase === "serve"} right />
               </div>
               <div className="game-actions">
                 <button className="icon-button glass" onClick={() => controller.current?.toggleMute()} aria-label="Звук">{ui.muted ? <VolumeX size={19} /> : <Volume2 size={19} />}</button>
