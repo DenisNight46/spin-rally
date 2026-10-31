@@ -82,6 +82,9 @@ export class TableTennisAI {
   private think = 0;
   private clock = 0;
   private serveDelay = 0;
+  private plannedRally = -1;
+  private shotOffset = 0;
+  private shotHeight = 0;
   private input: PaddleInput = { ...DEFAULT_INPUT, z: AI_RACKET_Z };
 
   constructor(private difficulty: Difficulty = "normal") {}
@@ -89,6 +92,9 @@ export class TableTennisAI {
   reset(): void {
     this.think = 0;
     this.serveDelay = 0;
+    this.plannedRally = -1;
+    this.shotOffset = 0;
+    this.shotHeight = 0;
     this.input = { ...DEFAULT_INPUT, z: AI_RACKET_Z };
   }
 
@@ -126,14 +132,29 @@ export class TableTennisAI {
     const intercept = predictIntercept(sim);
     if (intercept && this.think <= 0) {
       this.think = level.reaction;
+      // Choose one shot plan per incoming ball. The target is deliberately
+      // offset only a few centimetres: the blade still has to physically
+      // overlap the ball, while its lateral/upward movement shapes the return.
+      if (this.plannedRally !== state.rallyHits) {
+        this.plannedRally = state.rallyHits;
+        const opponentX = state.paddles[0].x;
+        const awayFromOpponent = opponentX >= 0 ? -1 : 1;
+        const variation = Math.sin(state.rallyHits * 12.9898 + this.clock * 2.17);
+        const direction = Math.abs(opponentX) < 0.16 ? (variation >= 0 ? 1 : -1) : awayFromOpponent;
+        const precision = this.difficulty === "easy" ? 0.025 : this.difficulty === "normal" ? 0.045 : 0.065;
+        this.shotOffset = direction * precision * (0.72 + Math.abs(variation) * 0.28);
+        // Alternate a compact upward brush and a flatter drive. This changes
+        // racket-head velocity, so spin comes from the same contact physics
+        // used by a human player rather than an artificial ball modifier.
+        this.shotHeight = (state.rallyHits % 2 === 0 ? 1 : -1) * (this.difficulty === "easy" ? 0.012 : 0.022);
+      }
       const error = Math.sin(this.clock * 7.13 + state.rallyHits * 2.7) * level.error;
-      // Higher levels begin moving toward the predicted contact point earlier
-      // and track it faster. The paddle still has to travel through the
-      // simulation's physical acceleration/speed limits.
       const anticipation = clamp(level.anticipation / Math.max(intercept.time, 0.04), 0.12, 1);
       const tracking = clamp(dt * 60 * level.speed * (0.75 + anticipation), 0, 1);
-      this.input.x += (clamp(intercept.x + error, -0.94, 0.94) - this.input.x) * tracking;
-      this.input.y += (clamp(intercept.y, 0.84, 1.70) - this.input.y) * tracking;
+      const targetX = clamp(intercept.x + this.shotOffset + error, -0.94, 0.94);
+      const targetY = clamp(intercept.y + this.shotHeight, 0.84, 1.70);
+      this.input.x += (targetX - this.input.x) * tracking;
+      this.input.y += (targetY - this.input.y) * tracking;
       this.input.z = AI_RACKET_Z;
     } else if (!intercept && state.ball.v.z >= 0) {
       this.input.x += (0 - this.input.x) * Math.min(1, dt * 2.2 * level.speed);
