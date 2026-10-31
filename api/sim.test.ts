@@ -36,6 +36,30 @@ describe("table tennis ball physics", () => {
     expect(TABLE.ballRadius).toBe(0.02);
   });
 
+  it("clamps remote racket targets and replaces non-finite coordinates safely", () => {
+    const sim = new TableTennisSim(23);
+    sim.setInput(0, { ...DEFAULT_INPUT, x: 500, y: -500, z: -500 });
+    expect(sim.getInput(0)).toMatchObject({ x: 0.98, y: 0.84, z: 1.38 });
+
+    sim.setInput(1, { ...DEFAULT_INPUT, x: Number.NaN, y: Number.POSITIVE_INFINITY, z: Number.NaN });
+    expect(sim.getInput(1)).toMatchObject({ x: 0, y: 1.16, z: -1.48 });
+  });
+
+  it("limits racket acceleration and speed instead of allowing target teleportation", () => {
+    const sim = new TableTennisSim(29);
+    sim.startMatch();
+    sim.setInput(0, { ...DEFAULT_INPUT, x: 0.98, y: 1.7, z: 1.75 });
+
+    sim.step(1 / 240);
+    const paddle = sim.state.paddles[0];
+    expect(Math.hypot(paddle.vx, paddle.vy, paddle.vz)).toBeLessThanOrEqual(70 * (1 / 240) * Math.sqrt(3) + 1e-9);
+
+    for (let frame = 0; frame < 120; frame += 1) sim.step(1 / 240);
+    expect(Math.abs(paddle.vx)).toBeLessThanOrEqual(10.5);
+    expect(Math.abs(paddle.vy)).toBeLessThanOrEqual(10.5);
+    expect(Math.abs(paddle.vz)).toBeLessThanOrEqual(10.5);
+  });
+
   it("ignores invalid frame deltas without corrupting the fixed-step clock", () => {
     const guarded = new TableTennisSim(19);
     const reference = new TableTennisSim(19);
