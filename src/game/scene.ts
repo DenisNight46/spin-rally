@@ -335,10 +335,11 @@ export class SceneView {
       const avatar = this.avatars[side];
       avatar.kit.color.set(settings[side].kit);
       const sign = side === 0 ? 1 : -1;
-      const bodyOffset = side === this.ownSide ? (this.ownSide === 0 ? -0.62 : 0.62) : 0;
+      const bodyOffset = side === this.ownSide ? (this.ownSide === 0 ? -0.42 : 0.42) : 0;
       const moveBlend = 1 - Math.exp(-dt * 8.5);
       const bodyX = paddle.x * 0.68 + bodyOffset;
-      const bodyZ = sign * (Math.abs(paddle.z) + 0.52);
+      const bodyZ = sign * (Math.abs(paddle.z) + 0.32);
+      avatar.group.scale.setScalar(side === this.ownSide ? 0.78 : 0.9);
       avatar.group.position.x += (bodyX - avatar.group.position.x) * moveBlend;
       avatar.group.position.z += (bodyZ - avatar.group.position.z) * moveBlend;
       avatar.group.rotation.z = -paddle.vx * 0.014;
@@ -400,13 +401,24 @@ export class SceneView {
     mesh.quaternion.setFromUnitVectors(Y_AXIS, this.tempDir.normalize());
   }
 
+  /** Convert viewport pointer coordinates into the racket plane in world space. */
+  pointerToRacket(pointerX: number, pointerY: number, side: Side): { x: number; y: number } | null {
+    const raycaster = new THREE.Raycaster();
+    raycaster.setFromCamera(new THREE.Vector2(pointerX, pointerY), this.camera);
+    const sign = side === 0 ? 1 : -1;
+    const plane = new THREE.Plane(new THREE.Vector3(0, 0, 1), -sign * 1.48);
+    const point = new THREE.Vector3();
+    if (!raycaster.ray.intersectPlane(plane, point)) return null;
+    return { x: THREE.MathUtils.clamp(point.x, -0.98, 0.98), y: THREE.MathUtils.clamp(point.y, 0.84, 1.7) };
+  }
+
   private updateCamera(dt: number): void {
     if (this.titleMode) return;
     const sign = this.ownSide === 0 ? 1 : -1;
     const mobile = window.innerWidth < 700;
-    this.tempA.set(0, mobile ? 2.5 : 2.2, sign * (mobile ? 3.75 : 3.25));
+    this.tempA.set(0, mobile ? 2.55 : 2.5, sign * (mobile ? 4.05 : 3.85));
     this.camera.position.lerp(this.tempA, Math.min(1, dt * 5));
-    this.cameraTarget.set(0, 0.88, -sign * 0.08);
+    this.cameraTarget.set(0, 0.92, -sign * 0.06);
     this.camera.lookAt(this.cameraTarget);
   }
 
