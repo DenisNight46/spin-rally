@@ -86,7 +86,7 @@ export class TableTennisSim {
     const target=this.inputs[side], sign=sideSign(side);
     target.x=clamp(Number.isFinite(input.x)?input.x:0,-0.98,0.98);
     target.y=clamp(Number.isFinite(input.y)?input.y:1.16,0.84,1.7);
-    target.z=clamp(Number.isFinite(input.z)?input.z:sign*0.92,sign>0?0.72:-1.42,sign>0?1.12:-0.72);
+    target.z=clamp(Number.isFinite(input.z)?input.z:sign*0.92,sign>0?0.72:-1.12,sign>0?1.12:-0.72);
     target.power=false; target.slice=false; target.serve=Boolean(input.serve);
   }
   getInput(side: Side): PaddleInput { return this.inputs[side]; }
@@ -194,6 +194,9 @@ export class TableTennisSim {
     b.spin.x+=angular.x/BALL_INERTIA;b.spin.z+=angular.z/BALL_INERTIA;
     // A little residual skid and spin loss at impact, not an artificial fixed trajectory.
     b.spin.x*=0.91;b.spin.y*=0.94;b.spin.z*=0.91;
+    // On a serve, table friction must slow the forward skid enough for the
+    // receiver-side bounce to occur before the receiving racket plane.
+    if(b.serve&&b.bounces===1)b.v.z*=0.62;
   }
 
   private crossedNet(a:number,b:number):boolean{return(a>0&&b<=0)||(a<0&&b>=0);}
