@@ -247,6 +247,7 @@ class SpinRallyGame {
       this.input.pointerFresh = false;
     }
     if (this.input.x !== 0) this.humanTarget.x += this.input.x * dt * 1.85 * orientation;
+    if (this.input.y !== 0) this.humanTarget.y += this.input.y * dt * 1.45;
 
     // Soft contact assistance: predict the incoming ball at the player's
     // racket plane and gently bias the target toward it. The player still
