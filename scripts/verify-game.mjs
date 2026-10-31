@@ -176,11 +176,31 @@ switch (shot.kind) {
 }
 await page.screenshot({ path: join(SHOTS, "01-title.png") });
 
-// 2) Enter playing
+// 2) Exercise the national-team browser and all confederation filters.
+await page.getByRole("button", { name: "Форма и инвентарь" }).click();
+await page.waitForSelector(".team-option");
+const expectedTeams = [
+  ["Азия", 12],
+  ["Европа", 17],
+  ["Африка", 1],
+  ["Америка", 2],
+  ["Все", 32],
+];
+for (const [region, expected] of expectedTeams) {
+  await page.getByRole("button", { name: region, exact: true }).click();
+  const actual = await page.locator(".team-option").count();
+  if (actual !== expected) fail(`team filter "${region}" returned ${actual} teams; expected ${expected}`);
+}
+if (await page.locator(".team-option.selected").count() !== 1) {
+  fail("the selected national team was lost while switching confederation filters");
+}
+await page.locator(".panel-title button").click();
+
+// 3) Enter playing
 await page.keyboard.press("Space");
 await page.waitForTimeout(400);
 
-// 3) Direction assertions: W raises the racket (Y increasing), D moves it right (X increasing).
+// 4) Direction assertions: W raises the racket (Y increasing), D moves it right (X increasing).
 async function playerPos() {
   return page.evaluate(() => window.__gameProbe ? window.__gameProbe() : null);
 }
@@ -204,15 +224,15 @@ if (probe) {
   console.warn("WARN: window.__gameProbe not injected, skipping direction assertions (expose a player-coordinate probe in src/game/boot.ts)");
 }
 
-// 4) Gameplay screenshot + Esc pause + restart
+// 5) Gameplay screenshot + Esc pause + restart
 await page.screenshot({ path: join(SHOTS, "02-gameplay.png") });
 await page.keyboard.press("Escape");
 await page.waitForTimeout(300);
 await page.screenshot({ path: join(SHOTS, "03-paused.png") });
 
-// 5) Zero console errors
+// 6) Zero console errors
 if (consoleErrors.length) fail(`${consoleErrors.length} console error(s): ${consoleErrors[0]}`);
 
 await browser.close();
 server.close();
-console.log("VERIFY OK: render/enter/direction/pause/console all passed; screenshots in verification-shots/");
+console.log("VERIFY OK: render/team-filters/enter/direction/pause/console all passed; screenshots in verification-shots/");
