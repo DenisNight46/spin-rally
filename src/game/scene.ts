@@ -340,6 +340,7 @@ export class SceneView {
       const bodyX = paddle.x * 0.68 + bodyOffset;
       const bodyZ = sign * (Math.abs(paddle.z) + 0.32);
       avatar.group.scale.setScalar(side === this.ownSide ? 0.78 : 0.9);
+      avatar.group.scale.setScalar(side === this.ownSide ? 0.78 : 0.9);
       avatar.group.position.x += (bodyX - avatar.group.position.x) * moveBlend;
       avatar.group.position.z += (bodyZ - avatar.group.position.z) * moveBlend;
       avatar.group.rotation.z = -paddle.vx * 0.014;
@@ -402,6 +403,17 @@ export class SceneView {
   }
 
   /** Convert viewport pointer coordinates into the racket plane in world space. */
+  pointerToRacket(pointerX: number, pointerY: number, side: Side): { x: number; y: number } | null {
+    const raycaster = new THREE.Raycaster();
+    raycaster.setFromCamera(new THREE.Vector2(pointerX, pointerY), this.camera);
+    const sign = side === 0 ? 1 : -1;
+    const plane = new THREE.Plane(new THREE.Vector3(0, 0, 1), -sign * 1.48);
+    const point = new THREE.Vector3();
+    if (!raycaster.ray.intersectPlane(plane, point)) return null;
+    return { x: THREE.MathUtils.clamp(point.x, -0.98, 0.98), y: THREE.MathUtils.clamp(point.y, 0.84, 1.7) };
+  }
+
+  /** Project screen pointer coordinates onto the physical racket plane. */
   pointerToRacket(pointerX: number, pointerY: number, side: Side): { x: number; y: number } | null {
     const raycaster = new THREE.Raycaster();
     raycaster.setFromCamera(new THREE.Vector2(pointerX, pointerY), this.camera);
