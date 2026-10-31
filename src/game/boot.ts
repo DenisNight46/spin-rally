@@ -248,6 +248,23 @@ class SpinRallyGame {
     }
     if (this.input.x !== 0) this.humanTarget.x += this.input.x * dt * 1.85 * orientation;
     if (this.input.z !== 0) this.humanTarget.z -= this.input.z * dt * 0.78 * sign;
+
+    // Soft contact assistance: predict the incoming ball at the player's
+    // racket plane and gently bias the target toward it. The player still
+    // controls the racket; this only reduces frustrating near-misses.
+    if (state.phase === "rally" && state.ball.v.z * sign > 0.15) {
+      const timeToRacket = (this.humanTarget.z - state.ball.p.z) / state.ball.v.z;
+      if (timeToRacket > 0 && timeToRacket < 0.38) {
+        const predictedX = state.ball.p.x + state.ball.v.x * timeToRacket;
+        const predictedY = state.ball.p.y + state.ball.v.y * timeToRacket - 4.905 * timeToRacket * timeToRacket;
+        if (predictedY > 0.82 && predictedY < 1.78) {
+          const assist = 0.24 * (1 - timeToRacket / 0.38);
+          this.humanTarget.x += (predictedX - this.humanTarget.x) * assist;
+          this.humanTarget.y += (predictedY - this.humanTarget.y) * assist;
+        }
+      }
+    }
+
     this.humanTarget.x = Math.max(-0.98, Math.min(0.98, this.humanTarget.x));
     this.humanTarget.y = Math.max(0.84, Math.min(1.7, this.humanTarget.y));
     this.humanTarget.z = this.ownSide === 0
