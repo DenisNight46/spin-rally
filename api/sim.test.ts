@@ -53,6 +53,51 @@ describe("table tennis ball physics", () => {
     expect(guarded.state).toEqual(reference.state);
   });
 
+
+  it("keeps the full simulation state finite during an extended match", () => {
+    const sim = new TableTennisSim(41);
+    sim.startMatch();
+    sim.setInput(0, { ...DEFAULT_INPUT, z: 1.4, serve: true });
+
+    for (let frame = 0; frame < 12_000; frame += 1) {
+      sim.step(1 / 120);
+      const { ball, paddles, scores, games } = sim.state;
+      const values = [
+        ball.p.x, ball.p.y, ball.p.z,
+        ball.v.x, ball.v.y, ball.v.z,
+        ball.spin.x, ball.spin.y, ball.spin.z,
+        ...paddles.flatMap((p) => [p.x, p.y, p.z, p.vx, p.vy, p.vz, p.cooldown]),
+        ...scores, ...games,
+      ];
+      expect(values.every(Number.isFinite), `non-finite simulation value at frame ${frame}`).toBe(true);
+      expect(Math.abs(ball.p.x)).toBeLessThan(100);
+      expect(Math.abs(ball.p.y)).toBeLessThan(100);
+      expect(Math.abs(ball.p.z)).toBeLessThan(100);
+    }
+  });
+
+  it("produces identical states for identical seeds and input timelines", () => {
+    const first = new TableTennisSim(73);
+    const second = new TableTennisSim(73);
+    first.startMatch();
+    second.startMatch();
+
+    for (let frame = 0; frame < 2_400; frame += 1) {
+      const input = {
+        ...DEFAULT_INPUT,
+        x: Math.sin(frame * 0.013) * 0.7,
+        y: 1.1 + Math.cos(frame * 0.009) * 0.25,
+        z: 1.4,
+        serve: frame === 0,
+      };
+      first.setInput(0, input);
+      second.setInput(0, input);
+      first.step(1 / 120);
+      second.step(1 / 120);
+      expect(second.state).toEqual(first.state);
+    }
+  });
+
   it("generates topspin from an upward racket swing without a modifier key", () => {
     const still = racketImpact(0, 1.12);
     const upward = racketImpact(0, 1.7);
