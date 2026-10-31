@@ -180,12 +180,8 @@ export class TableTennisSim {
   private applyTableImpulse():void{
     const b=this.state.ball;
     const normalVelocity=b.v.y;
-    // A legal serve must bounce on the receiver's half before it can be returned.
-    // Use a deliberately lower first-bounce restitution on serves so the second
-    // bounce happens inside the receiving court, before the racket contact plane.
-    const restitution=b.serve&&b.bounces===1?0.76:TABLE_RESTITUTION;
-    const normalImpulse=BALL_MASS*(1+restitution)*Math.abs(normalVelocity);
-    b.v.y=Math.abs(normalVelocity)*restitution;
+    const normalImpulse=BALL_MASS*(1+TABLE_RESTITUTION)*Math.abs(normalVelocity);
+    b.v.y=Math.abs(normalVelocity)*TABLE_RESTITUTION;
     // Contact point is one radius below the centre; friction couples horizontal velocity and spin.
     const r={x:0,y:-BALL_RADIUS,z:0};
     const rotational=cross(b.spin,r);
