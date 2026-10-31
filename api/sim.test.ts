@@ -36,6 +36,23 @@ describe("table tennis ball physics", () => {
     expect(TABLE.ballRadius).toBe(0.02);
   });
 
+  it("ignores invalid frame deltas without corrupting the fixed-step clock", () => {
+    const guarded = new TableTennisSim(19);
+    const reference = new TableTennisSim(19);
+    guarded.startMatch();
+    reference.startMatch();
+
+    const before = structuredClone(guarded.state);
+    guarded.step(Number.NaN);
+    guarded.step(Number.POSITIVE_INFINITY);
+    guarded.step(-1);
+    expect(guarded.state).toEqual(before);
+
+    guarded.step(1 / 60);
+    reference.step(1 / 60);
+    expect(guarded.state).toEqual(reference.state);
+  });
+
   it("generates topspin from an upward racket swing without a modifier key", () => {
     const still = racketImpact(0, 1.12);
     const upward = racketImpact(0, 1.7);
