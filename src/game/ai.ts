@@ -8,7 +8,7 @@ const LEVELS = {
   hard: { reaction: 0.018, speed: 1, error: 0.006, anticipation: 0.03 },
 } as const;
 
-const AI_RACKET_Z = -1.40;
+const AI_RACKET_Z = -0.92;
 
 const clamp = (value: number, min: number, max: number) => Math.max(min, Math.min(max, value));
 const cross = (a: Vec3, b: Vec3): Vec3 => ({
