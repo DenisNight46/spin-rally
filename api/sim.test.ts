@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { DEFAULT_INPUT, TABLE, TableTennisSim } from "../contracts/sim";
 import { TableTennisAI } from "../src/game/ai";
-import { NATIONAL_TEAMS, NATIONAL_TEAM_FLAG_CODES, getNationalTeam } from "../src/game/teams";
+import { NATIONAL_TEAMS, NATIONAL_TEAM_FLAG_CODES, getNationalTeam, getTeamsByConfederation } from "../src/game/teams";
 
 function racketImpact(targetX: number, targetY: number) {
   const sim = new TableTennisSim(7);
@@ -174,6 +174,18 @@ describe("national team catalogue", () => {
         expect(color, `invalid crest color for ${team.id}`).toMatch(/^#[0-9a-f]{6}$/i);
       }
     }
+  });
+
+  it("filters every confederation without losing or duplicating teams", () => {
+    const regions = ["Asia", "Europe", "Africa", "Americas"] as const;
+    const filtered = regions.flatMap((region) => getTeamsByConfederation(region));
+    expect(getTeamsByConfederation("All")).toHaveLength(32);
+    expect(getTeamsByConfederation("Asia")).toHaveLength(12);
+    expect(getTeamsByConfederation("Europe")).toHaveLength(17);
+    expect(getTeamsByConfederation("Africa")).toHaveLength(1);
+    expect(getTeamsByConfederation("Americas")).toHaveLength(2);
+    expect(new Set(filtered.map((team) => team.id)).size).toBe(32);
+    expect(filtered.map((team) => team.id).sort()).toEqual(NATIONAL_TEAMS.map((team) => team.id).sort());
   });
 
   it("resolves known teams and safely returns undefined for unknown ids", () => {
