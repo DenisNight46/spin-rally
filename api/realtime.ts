@@ -23,6 +23,7 @@ interface Room {
   tick: number;
   accumulator: number;
   lastTickAt: number;
+  rematchVotes: Set<Side>;
 }
 
 const rooms = new Map<string, Room>();
@@ -83,11 +84,13 @@ function leave(socket: ClientSocket): void {
   broadcastState(room);
 }
 
-function validInput(input: PaddleInput): boolean {
-  return input && typeof input === "object" && ["x", "y", "z"].every((key) => {
-    const value = input[key as "x" | "y" | "z"];
-    return typeof value === "number" && Number.isFinite(value) && Math.abs(value) < 3;
-  });
+export function isValidPaddleInput(input: unknown): input is PaddleInput {
+  if (!input || typeof input !== "object") return false;
+  const value = input as Partial<PaddleInput>;
+  return ["x", "y", "z"].every((key) => {
+    const coordinate = value[key as "x" | "y" | "z"];
+    return typeof coordinate === "number" && Number.isFinite(coordinate) && Math.abs(coordinate) < 3;
+  }) && ["power", "slice", "serve"].every((key) => typeof value[key as "power" | "slice" | "serve"] === "boolean");
 }
 
 export function attachRealtime(server: HttpServer): void {
@@ -110,13 +113,13 @@ export function attachRealtime(server: HttpServer): void {
       if (message.type === "create") {
         if (socket.room) leave(socket);
         const id = makeCode();
-        if (rooms.size > 250) {
+        if (rooms.size >= 250) {
           send(socket, { type: "error", message: "Сервер занят. Попробуйте позже" });
           return;
         }
         const settings = cleanSettings(message.settings);
         const now = performance.now();
-        const room: Room = { id, players: [null, null], sim: new TableTennisSim(randomInt(1, 2 ** 30)), tick: 0, accumulator: 0, lastTickAt: now };
+        const room: Room = { id, players: [null, null], sim: new TableTennisSim(randomInt(1, 2 ** 30)), tick: 0, accumulator: 0, lastTickAt: now, rematchVotes: new Set() };
         room.players[0] = { socket, settings };
         rooms.set(id, room);
         socket.room = room;
@@ -151,14 +154,24 @@ export function attachRealtime(server: HttpServer): void {
       if (message.type === "input") {
         const now = Date.now();
         // Cap per-client input to a sensible 100 Hz; clients normally send 30 Hz.
-        if (socket.room && socket.side !== undefined && validInput(message.input) && now - (socket.lastInputAt ?? 0) >= 10) {
+        if (socket.room && socket.side !== undefined && isValidPaddleInput(message.input) && now - (socket.lastInputAt ?? 0) >= 10) {
           socket.lastInputAt = now;
           socket.room.sim.setInput(socket.side, message.input);
         }
         return;
       }
       if (message.type === "rematch") {
-        if (socket.room?.sim.state.phase === "gameover") socket.room.sim.startMatch();
+        const room = socket.room;
+        if (room && socket.side !== undefined && room.sim.state.phase === "gameover") {
+          room.rematchVotes.add(socket.side);
+          if (room.rematchVotes.size === 2) {
+            room.rematchVotes.clear();
+            room.sim.startMatch();
+          } else {
+            room.sim.state.message = "Ожидаем подтверждения реванша от соперника";
+          }
+          broadcastState(room);
+        }
         return;
       }
       if (message.type === "ping") send(socket, { type: "pong", at: Number(message.at) || 0 });
