@@ -85,6 +85,17 @@ function leave(socket: ClientSocket): void {
   broadcastState(room);
 }
 
+/** Browser WebSocket handshakes must come from the same host; non-browser clients may omit Origin. */
+export function isAllowedWebSocketOrigin(origin: string | undefined, host: string | undefined): boolean {
+  if (!origin) return true;
+  if (!host) return false;
+  try {
+    return new URL(origin).host.toLowerCase() === host.toLowerCase();
+  } catch {
+    return false;
+  }
+}
+
 export function isValidPaddleInput(input: unknown): input is PaddleInput {
   if (!input || typeof input !== "object") return false;
   const value = input as Partial<PaddleInput>;
@@ -97,8 +108,19 @@ export function isValidPaddleInput(input: unknown): input is PaddleInput {
 export function attachRealtime(server: HttpServer): void {
   const wss = new WebSocketServer({ noServer: true, maxPayload: 4096 });
   server.on("upgrade", (request, socket, head) => {
-    const url = new URL(request.url ?? "/", "http://localhost");
-    if (url.pathname !== "/ws") return;
+    let pathname = "/";
+    try { pathname = new URL(request.url ?? "/", "http://localhost").pathname; }
+    catch { socket.destroy(); return; }
+    if (pathname !== "/ws") {
+      socket.write("HTTP/1.1 404 Not Found\r\nConnection: close\r\n\r\n");
+      socket.destroy();
+      return;
+    }
+    if (!isAllowedWebSocketOrigin(request.headers.origin, request.headers.host)) {
+      socket.write("HTTP/1.1 403 Forbidden\r\nConnection: close\r\n\r\n");
+      socket.destroy();
+      return;
+    }
     wss.handleUpgrade(request, socket, head, (ws) => wss.emit("connection", ws, request));
   });
 
