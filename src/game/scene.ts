@@ -59,8 +59,10 @@ export class SceneView {
       this.paddles[0].userData.material as THREE.MeshStandardMaterial,
       this.paddles[1].userData.material as THREE.MeshStandardMaterial,
     ];
-    this.ballMaterial = new THREE.MeshStandardMaterial({ color: "#f7fbff", roughness: 0.72, emissive: "#ffffff", emissiveIntensity: 0.025 });
+    this.ballMaterial = new THREE.MeshStandardMaterial({ color: "#f7fbff", roughness: 0.72, emissive: "#ffffff", emissiveIntensity: 0.11 });
     this.ball = new THREE.Mesh(new THREE.SphereGeometry(TABLE.ballRadius, 24, 16), this.ballMaterial);
+    // A modest visual-only scale makes the ball readable without changing collision physics.
+    this.ball.scale.setScalar(1.24);
     this.ball.castShadow = true;
     const seam = new THREE.Mesh(
       new THREE.TorusGeometry(TABLE.ballRadius * 0.965, 0.00035, 6, 48),
@@ -71,7 +73,7 @@ export class SceneView {
     this.scene.add(this.ball);
     const trailGeometry = new THREE.BufferGeometry();
     trailGeometry.setAttribute("position", new THREE.BufferAttribute(this.trailPositions, 3));
-    this.trail = new THREE.Line(trailGeometry, new THREE.LineBasicMaterial({ color: "#b8fff1", transparent: true, opacity: 0.28, blending: THREE.AdditiveBlending }));
+    this.trail = new THREE.Line(trailGeometry, new THREE.LineBasicMaterial({ color: "#b8fff1", transparent: true, opacity: 0.42, blending: THREE.AdditiveBlending }));
     this.trail.frustumCulled = false;
     this.scene.add(this.trail);
     this.createParticles();
@@ -339,7 +341,6 @@ export class SceneView {
       const moveBlend = 1 - Math.exp(-dt * 8.5);
       const bodyX = paddle.x * 0.68 + bodyOffset;
       const bodyZ = sign * (Math.abs(paddle.z) + 0.32);
-      avatar.group.scale.setScalar(side === this.ownSide ? 0.78 : 0.9);
       avatar.group.scale.setScalar(side === this.ownSide ? 0.78 : 0.9);
       avatar.group.position.x += (bodyX - avatar.group.position.x) * moveBlend;
       avatar.group.position.z += (bodyZ - avatar.group.position.z) * moveBlend;
