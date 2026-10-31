@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it } from "vitest";
 import { createServer, type Server } from "node:http";
 import WebSocket from "ws";
-import { attachRealtime } from "./realtime";
+import { attachRealtime, isValidPaddleInput } from "./realtime";
 import { DEFAULT_SETTINGS } from "../contracts/sim";
 import type { ServerMessage } from "../contracts/network";
 
@@ -50,6 +50,14 @@ async function openSocket(url: string): Promise<WebSocket> {
 }
 
 describe("online room protocol", () => {
+  it("rejects malformed or non-finite paddle input before it reaches simulation", () => {
+    const valid = { x: 0.2, y: 1.3, z: 1.48, power: false, slice: true, serve: false };
+    expect(isValidPaddleInput(valid)).toBe(true);
+    expect(isValidPaddleInput({ ...valid, x: Number.NaN })).toBe(false);
+    expect(isValidPaddleInput({ ...valid, z: 3 })).toBe(false);
+    expect(isValidPaddleInput({ ...valid, serve: "yes" })).toBe(false);
+    expect(isValidPaddleInput(null)).toBe(false);
+  });
   it("creates an invite room, joins a second player, exchanges state and ping, then reports disconnect", async () => {
     const server = createServer();
     servers.push(server);
