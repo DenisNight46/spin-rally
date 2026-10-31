@@ -245,7 +245,7 @@ function PlayerScore({ name, color, team, score, games, serving, right = false }
   return <div className={`player-score ${right ? "right" : ""}`}><div className="player-info"><span className="player-name"><i style={{ background: color }} /><TeamFlag team={team} /> {name || "Игрок"}{serving && <span className="serve-dot" title="Подача" />}</span><small><TeamCrest team={team} /> {team.shortName} · Партии: {games}</small></div><b>{score}</b></div>;
 }
 
-const FLAG_CODES: Record<string, string> = { chn: "cn", jpn: "jp", kor: "kr", ind: "in", sgp: "sg", swe: "se", ger: "de", fra: "fr", por: "pt", pol: "pl", rou: "ro", rus: "ru", egy: "eg", bra: "br", usa: "us", aut: "at" };
+const FLAG_CODES: Record<string, string> = { chn: "cn", jpn: "jp", kor: "kr", ind: "in", sgp: "sg", swe: "se", ger: "de", fra: "fr", por: "pt", pol: "pl", rou: "ro", rus: "ru", egy: "eg", bra: "br", usa: "us", aut: "at", hkg: "hk", tpe: "tw", prk: "kp", kaz: "kz", tha: "th", mas: "my", iri: "ir", den: "dk", ita: "it", esp: "es", bel: "be", cro: "hr", srb: "rs", hun: "hu", svk: "sk", slo: "si" };
 
 function TeamFlag({ team }: { team: NationalTeam }) {
   const code = FLAG_CODES[team.id];
