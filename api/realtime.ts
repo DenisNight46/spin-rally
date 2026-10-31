@@ -79,6 +79,7 @@ function leave(socket: ClientSocket): void {
     rooms.delete(room.id);
     return;
   }
+  room.rematchVotes.clear();
   room.sim = new TableTennisSim(randomInt(1, 2 ** 30));
   room.sim.state.message = "Соперник отключился. Ожидание нового игрока";
   broadcastState(room);
