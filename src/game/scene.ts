@@ -453,11 +453,20 @@ export class SceneView {
 
   dispose(): void {
     window.removeEventListener("resize", this.resize);
+    const disposedTextures = new Set<THREE.Texture>();
     this.scene.traverse((object) => {
       if (object instanceof THREE.Mesh || object instanceof THREE.Line) {
         object.geometry.dispose();
         const materials = Array.isArray(object.material) ? object.material : [object.material];
-        for (const material of materials) material.dispose();
+        for (const material of materials) {
+          for (const value of Object.values(material)) {
+            if (value instanceof THREE.Texture && !disposedTextures.has(value)) {
+              disposedTextures.add(value);
+              value.dispose();
+            }
+          }
+          material.dispose();
+        }
       }
     });
     this.renderer.dispose();
