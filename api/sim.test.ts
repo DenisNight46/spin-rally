@@ -72,15 +72,31 @@ describe("table tennis ball physics", () => {
     sim.setInput(0, { ...DEFAULT_INPUT, z: 1.4, serve: true });
     let hit = false;
     let lastEvent = sim.state.eventId;
+    let lastBounces = sim.state.ball.bounces;
+    const trace: unknown[] = [];
     for (let i = 0; i < 600 && !hit; i += 1) {
       ai.update(sim, 1 / 60);
       sim.step(1 / 120);
       sim.step(1 / 120);
+      const { ball, paddles } = sim.state;
+      if (i % 30 === 0 || ball.bounces !== lastBounces || Math.abs(ball.p.z) < 0.25 || sim.state.eventId !== lastEvent) {
+        trace.push({
+          frame: i,
+          phase: sim.state.phase,
+          event: sim.state.event,
+          eventId: sim.state.eventId,
+          ball: { p: { ...ball.p }, v: { ...ball.v }, bounces: ball.bounces, lastHitter: ball.lastHitter, serve: ball.serve },
+          aiPaddle: { x: paddles[1].x, y: paddles[1].y, z: paddles[1].z, vx: paddles[1].vx, vy: paddles[1].vy, vz: paddles[1].vz },
+          aiInput: { ...sim.getInput(1) },
+        });
+        if (trace.length > 24) trace.shift();
+      }
+      lastBounces = ball.bounces;
       if (sim.state.eventId !== lastEvent) {
         lastEvent = sim.state.eventId;
         hit = sim.state.event?.type === "hit";
       }
     }
-    expect(hit).toBe(true);
+    expect(hit, `AI return diagnostics:\n${JSON.stringify({ finalPhase: sim.state.phase, finalMessage: sim.state.message, finalBall: sim.state.ball, trace }, null, 2)}`).toBe(true);
   });
 });
