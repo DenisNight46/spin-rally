@@ -222,7 +222,7 @@ export class TableTennisSim {
       const bx=prevBall.x+(b.p.x-prevBall.x)*t,by=prevBall.y+(b.p.y-prevBall.y)*t;
       const px=p.prevX+(p.x-p.prevX)*t,py=p.prevY+(p.y-p.prevY)*t;
       // Realistic blade footprint (roughly 17 x 16 cm), expanded by the 4 cm ball diameter.
-      const dx=(bx-px)/0.105,dy=(by-py)/0.102;
+      const dx=(bx-px)/0.145,dy=(by-py)/0.14;
       if(dx*dx+dy*dy>1)continue;
       if(b.serve&&b.bounces<2){this.awardPoint(b.lastHitter,"Приём до отскока");return;}
       if(!b.serve&&b.bounces<1){this.awardPoint(b.lastHitter,"Удар с лёта запрещён");return;}
@@ -235,11 +235,14 @@ export class TableTennisSim {
     // The blade naturally tilts with the racket's measured swing velocity.
     const normal=normalize({x:clamp(p.vx*0.08,-0.38,0.38),y:clamp(-p.vy*0.20,-0.48,0.48),z:-sign});
     const relativeNormal=dot({x:b.v.x-p.vx,y:b.v.y-p.vy,z:b.v.z-p.vz},normal);
-    if(relativeNormal>=-0.08)return;
-    const normalImpulse=BALL_MASS*(1+PADDLE_RESTITUTION)*(-relativeNormal);
-    b.v.x-=((1+PADDLE_RESTITUTION)*relativeNormal)*normal.x;
-    b.v.y-=((1+PADDLE_RESTITUTION)*relativeNormal)*normal.y;
-    b.v.z-=((1+PADDLE_RESTITUTION)*relativeNormal)*normal.z;
+    // Forgiving arcade contact: a valid face overlap still returns the ball when
+    // the racket is tracking at nearly the same speed as the incoming ball.
+    if(relativeNormal>=0.35)return;
+    const impactNormal=Math.min(relativeNormal,-1.15);
+    const normalImpulse=BALL_MASS*(1+PADDLE_RESTITUTION)*(-impactNormal);
+    b.v.x-=((1+PADDLE_RESTITUTION)*impactNormal)*normal.x;
+    b.v.y-=((1+PADDLE_RESTITUTION)*impactNormal)*normal.y;
+    b.v.z-=((1+PADDLE_RESTITUTION)*impactNormal)*normal.z;
     // Coulomb-limited tangential impulse: moving the racket across/under the ball
     // creates side/top/back spin automatically. No spin modifier buttons are used.
     const arm={x:-normal.x*BALL_RADIUS,y:-normal.y*BALL_RADIUS,z:-normal.z*BALL_RADIUS};
