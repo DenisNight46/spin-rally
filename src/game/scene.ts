@@ -352,13 +352,9 @@ export class SceneView {
       const gait = this.elapsed * (5 + Math.min(10, moveSpeed * 1.2));
       avatar.legs[0].rotation.z = -0.035 - paddle.vx * 0.012 - footwork * Math.sin(gait);
       avatar.legs[1].rotation.z = 0.035 - paddle.vx * 0.012 + footwork * Math.sin(gait);
-      // Limbs are world-space meshes, so the shoulder anchor must include
-      // avatar scale; otherwise the arm floats above the shrunken torso.
-      this.tempA.set(
-        avatar.group.position.x + (side === 0 ? 0.2 : -0.2) * avatarScale,
-        1.38 * avatarScale,
-        avatar.group.position.z + sign * 0.07 * avatarScale,
-      );
+      // Limbs are world-space meshes. Transform the shoulder from avatar-local
+      // space so scale, body lean and lateral movement stay in sync.
+      avatar.group.localToWorld(this.tempA.set(side === 0 ? 0.2 : -0.2, 1.38, sign * 0.07));
       this.tempB.set(paddle.x, paddle.y - 0.08, paddle.z);
       this.tempC.copy(this.tempA).lerp(this.tempB, 0.52);
       this.tempC.y -= 0.055;
