@@ -27,7 +27,7 @@ export interface MatchState {
 export interface PlayerSettings { name: string; kit: string; paddle: string; ball: string }
 export const DEFAULT_SETTINGS: PlayerSettings = { name: "Игрок", kit: "#27d3a2", paddle: "#ef476f", ball: "#f7fbff" };
 export const TABLE = Object.freeze({ width: 1.525, length: 2.74, y: 0.76, netHeight: 0.1525, ballRadius: 0.02 });
-export const DEFAULT_INPUT: PaddleInput = { x: 0, y: 1.16, z: 1.38, power: false, slice: false, serve: false };
+export const DEFAULT_INPUT: PaddleInput = { x: 0, y: 1.16, z: 0.92, power: false, slice: false, serve: false };
 
 const GRAVITY = 9.81;
 const BALL_MASS = 0.0027;
@@ -50,7 +50,7 @@ const addScaled = (a: Vec3, b: Vec3, s: number): Vec3 => ({ x:a.x+b.x*s, y:a.y+b
 const length = (v: Vec3) => Math.hypot(v.x,v.y,v.z);
 const normalize = (v: Vec3): Vec3 => { const l=length(v)||1; return {x:v.x/l,y:v.y/l,z:v.z/l}; };
 function mulberry32(seed: number) { let a=seed>>>0; return () => { a|=0; a=(a+0x6d2b79f5)|0; let t=Math.imul(a^(a>>>15),1|a); t=(t+Math.imul(t^(t>>>7),61|t))^t; return ((t^(t>>>14))>>>0)/4294967296; }; }
-function makePaddle(side: Side): PaddleState { const z=sideSign(side)*1.4; return {x:0,y:1.16,z,vx:0,vy:0,vz:0,prevX:0,prevY:1.16,prevZ:z,cooldown:0,power:false,slice:false}; }
+function makePaddle(side: Side): PaddleState { const z=sideSign(side)*0.92; return {x:0,y:1.16,z,vx:0,vy:0,vz:0,prevX:0,prevY:1.16,prevZ:z,cooldown:0,power:false,slice:false}; }
 
 /**
  * Deterministic table-tennis simulation in metres and seconds.
@@ -68,7 +68,7 @@ export class TableTennisSim {
 
   constructor(seed = 2026) {
     this.random = mulberry32(seed);
-    this.inputs = [{...DEFAULT_INPUT},{...DEFAULT_INPUT,z:-1.38}];
+    this.inputs = [{...DEFAULT_INPUT},{...DEFAULT_INPUT,z:-0.92}];
     this.state = {
       phase:"waiting", ball:{p:{x:0,y:1.12,z:1.25},v:{x:0,y:0,z:0},spin:{x:0,y:0,z:0},lastHitter:0,bounces:0,firstBounce:null,serve:true},
       paddles:[makePaddle(0),makePaddle(1)],scores:[0,0],games:[0,0],gameNumber:1,server:0,
@@ -86,7 +86,7 @@ export class TableTennisSim {
     const target=this.inputs[side], sign=sideSign(side);
     target.x=clamp(Number.isFinite(input.x)?input.x:0,-0.98,0.98);
     target.y=clamp(Number.isFinite(input.y)?input.y:1.16,0.84,1.7);
-    target.z=clamp(Number.isFinite(input.z)?input.z:sign*1.4,sign>0?0.93:-1.72,sign>0?1.72:-0.93);
+    target.z=clamp(Number.isFinite(input.z)?input.z:sign*0.92,sign>0?0.72:-1.12,sign>0?1.12:-0.72);
     target.power=false; target.slice=false; target.serve=Boolean(input.serve);
   }
   getInput(side: Side): PaddleInput { return this.inputs[side]; }
