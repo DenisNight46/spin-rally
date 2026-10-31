@@ -180,7 +180,7 @@ await page.screenshot({ path: join(SHOTS, "01-title.png") });
 await page.keyboard.press("Space");
 await page.waitForTimeout(400);
 
-// 3) Direction assertions: pressing W must move forward (moving in the z-decreasing direction), pressing D must move right (x increasing)
+// 3) Direction assertions: W raises the racket (Y increasing), D moves it right (X increasing).
 async function playerPos() {
   return page.evaluate(() => window.__gameProbe ? window.__gameProbe() : null);
 }
@@ -191,15 +191,15 @@ async function deltaAfter(key, ms = 500) {
   await page.waitForTimeout(ms);
   await page.keyboard.up(key);
   const after = await playerPos();
-  return after ? { dx: after.x - before.x, dz: after.z - before.z } : null;
+  return after ? { dx: after.x - before.x, dy: after.y - before.y } : null;
 }
 
 const probe = await page.evaluate(() => !!window.__gameProbe);
 if (probe) {
   const dW = await deltaAfter("KeyW");
-  if (dW && dW.dz >= -0.05) fail(`W did not move forward (dz=${dW?.dz.toFixed(3)}) — direction mapping looks reversed`);
+  if (dW && dW.dy <= 0.05) fail(`W did not raise the racket (dy=${dW?.dy.toFixed(3)}) — vertical mapping looks reversed`);
   const dD = await deltaAfter("KeyD");
-  if (dD && dD.dx <= 0.05) fail(`D did not move right (dx=${dD?.dx.toFixed(3)}) — direction mapping looks reversed`);
+  if (dD && dD.dx <= 0.05) fail(`D did not move the racket right (dx=${dD?.dx.toFixed(3)}) — horizontal mapping looks reversed`);
 } else {
   console.warn("WARN: window.__gameProbe not injected, skipping direction assertions (expose a player-coordinate probe in src/game/boot.ts)");
 }
