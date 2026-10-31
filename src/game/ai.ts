@@ -3,12 +3,12 @@ import { DEFAULT_INPUT, TABLE, type PaddleInput, type TableTennisSim, type Vec3 
 export type Difficulty = "easy" | "normal" | "hard";
 
 const LEVELS = {
-  easy: { reaction: 0.12, speed: 0.82, error: 0.08, anticipation: 0.10 },
-  normal: { reaction: 0.055, speed: 0.98, error: 0.025, anticipation: 0.06 },
-  hard: { reaction: 0.025, speed: 1, error: 0.012, anticipation: 0.03 },
+  easy: { reaction: 0.055, speed: 0.92, error: 0.025, anticipation: 0.10 },
+  normal: { reaction: 0.035, speed: 1, error: 0.012, anticipation: 0.06 },
+  hard: { reaction: 0.018, speed: 1, error: 0.006, anticipation: 0.03 },
 } as const;
 
-const AI_RACKET_Z = -1.55;
+const AI_RACKET_Z = -1.40;
 
 const clamp = (value: number, min: number, max: number) => Math.max(min, Math.min(max, value));
 const cross = (a: Vec3, b: Vec3): Vec3 => ({
@@ -29,7 +29,7 @@ function predictIntercept(sim: TableTennisSim): { x: number; y: number; time: nu
   const dt = 1 / 240;
   const tableTop = TABLE.y + TABLE.ballRadius;
 
-  for (let i = 0; i < 360; i += 1) {
+  for (let i = 0; i < 480; i += 1) {
     const speed = Math.hypot(v.x, v.y, v.z);
     const magnus = cross(spin, v);
     const drag = 0.045 * speed;
@@ -38,13 +38,13 @@ function predictIntercept(sim: TableTennisSim): { x: number; y: number; time: nu
       y: v.y + (-9.81 - drag * v.y + 0.00030 * magnus.y) * dt,
       z: v.z + (-drag * v.z + 0.00030 * magnus.z) * dt,
     };
-    const previousY = p.y;
+    const previous = { ...p };
     p = { x: p.x + v.x * dt, y: p.y + v.y * dt, z: p.z + v.z * dt };
     spin.x *= 1 - 0.12 * dt;
     spin.y *= 1 - 0.12 * dt;
     spin.z *= 1 - 0.12 * dt;
 
-    if (previousY >= tableTop && p.y <= tableTop && v.y < 0 &&
+    if (previous.y >= tableTop && p.y <= tableTop && v.y < 0 &&
         Math.abs(p.x) <= TABLE.width / 2 && Math.abs(p.z) <= TABLE.length / 2) {
       p.y = tableTop;
       v.y = Math.abs(v.y) * 0.88;
@@ -57,7 +57,11 @@ function predictIntercept(sim: TableTennisSim): { x: number; y: number; time: nu
 
     if (previousZ > planeZ && p.z <= planeZ) {
       const fraction = clamp((previousZ - planeZ) / Math.max(1e-6, previousZ - p.z), 0, 1);
-      return { x: p.x, y: p.y, time: (i + fraction) * dt };
+      return {
+        x: previous.x + (p.x - previous.x) * fraction,
+        y: previous.y + (p.y - previous.y) * fraction,
+        time: (i + fraction) * dt,
+      };
     }
     previousZ = p.z;
     if (p.y < TABLE.y - 0.1 || Math.abs(p.x) > 1.6 || p.z < -2.1) return null;
