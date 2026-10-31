@@ -413,17 +413,6 @@ export class SceneView {
     return { x: THREE.MathUtils.clamp(point.x, -0.98, 0.98), y: THREE.MathUtils.clamp(point.y, 0.84, 1.7) };
   }
 
-  /** Project screen pointer coordinates onto the physical racket plane. */
-  pointerToRacket(pointerX: number, pointerY: number, side: Side): { x: number; y: number } | null {
-    const raycaster = new THREE.Raycaster();
-    raycaster.setFromCamera(new THREE.Vector2(pointerX, pointerY), this.camera);
-    const sign = side === 0 ? 1 : -1;
-    const plane = new THREE.Plane(new THREE.Vector3(0, 0, 1), -sign * 1.48);
-    const point = new THREE.Vector3();
-    if (!raycaster.ray.intersectPlane(plane, point)) return null;
-    return { x: THREE.MathUtils.clamp(point.x, -0.98, 0.98), y: THREE.MathUtils.clamp(point.y, 0.84, 1.7) };
-  }
-
   private updateCamera(dt: number): void {
     if (this.titleMode) return;
     const sign = this.ownSide === 0 ? 1 : -1;
