@@ -298,7 +298,9 @@ class SpinRallyGame {
     if (state.phase === "rally" && state.ball.v.z * sign > 0.15) {
       const intercept = predictRacketIntercept(state, this.ownSide);
       if (intercept) {
-        const assist = 0.42 * (1 - intercept.time / 0.38);
+        // Assistance must fade to zero for distant contacts. A negative
+        // weight would actively push the racket away from the predicted ball.
+        const assist = Math.max(0, Math.min(0.42, 0.42 * (1 - intercept.time / 0.38)));
         this.humanTarget.x += (intercept.x - this.humanTarget.x) * assist;
         this.humanTarget.y += (intercept.y - this.humanTarget.y) * assist;
       }
