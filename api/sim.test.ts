@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { DEFAULT_INPUT, TABLE, TableTennisSim } from "../contracts/sim";
 import { TableTennisAI } from "../src/game/ai";
+import { NATIONAL_TEAMS, NATIONAL_TEAM_FLAG_CODES, getNationalTeam } from "../src/game/teams";
 
 function racketImpact(targetX: number, targetY: number) {
   const sim = new TableTennisSim(7);
@@ -153,5 +154,31 @@ describe("table tennis ball physics", () => {
     }
 
     expect(returned, `AI failed to return a legal serve on ${difficulty} difficulty`).toBe(true);
+  });
+});
+
+
+describe("national team catalogue", () => {
+  it("contains 32 uniquely identified national teams", () => {
+    expect(NATIONAL_TEAMS).toHaveLength(32);
+    expect(new Set(NATIONAL_TEAMS.map((team) => team.id)).size).toBe(32);
+    expect(new Set(NATIONAL_TEAMS.map((team) => team.shortName)).size).toBe(32);
+  });
+
+  it("provides a valid flag asset code and original crest for every team", () => {
+    for (const team of NATIONAL_TEAMS) {
+      expect(NATIONAL_TEAM_FLAG_CODES[team.id], `missing flag mapping for ${team.id}`).toMatch(/^[a-z]{2}$/);
+      expect(team.flag, `missing flag emoji for ${team.id}`).toBeTruthy();
+      expect(team.crest.initials, `missing crest initials for ${team.id}`).toBeTruthy();
+      for (const color of [team.crest.primary, team.crest.secondary, team.crest.accent]) {
+        expect(color, `invalid crest color for ${team.id}`).toMatch(/^#[0-9a-f]{6}$/i);
+      }
+    }
+  });
+
+  it("resolves known teams and safely returns undefined for unknown ids", () => {
+    expect(getNationalTeam("rus")?.name).toBe("Россия");
+    expect(getNationalTeam("chn")?.name).toBe("Китай");
+    expect(getNationalTeam("not-a-team")).toBeUndefined();
   });
 });
