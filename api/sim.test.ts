@@ -142,7 +142,7 @@ describe("table tennis ball physics", () => {
     let returned = false;
     let lastEvent = sim.state.eventId;
 
-    for (let i = 0; i < 720 && !returned && sim.state.phase === "rally"; i += 1) {
+    for (let i = 0; i < 720 && !returned; i += 1) {
       ai.update(sim, 1 / 60);
       sim.step(1 / 120);
       sim.step(1 / 120);
