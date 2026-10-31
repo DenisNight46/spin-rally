@@ -185,7 +185,7 @@ export default function Home() {
             {ui.state.phase === "serve" && ui.state.server === ui.ownSide && !waitingOnline && (
               <button className="serve-button" onClick={() => controller.current?.serve()}><span>ПОДАЧА</span><small>Пробел или нажми</small></button>
             )}
-            <div className="control-hint glass"><MousePointer2 size={15} /><span>Движение мыши — положение и вращение ракетки</span><i />Клик — подача · WASD — позиция</div>
+            <div className="control-hint glass"><MousePointer2 size={15} /><span>Мышь — положение и вращение ракетки</span><i />Клик — подача · A/D — влево/вправо</div>
           </>
         )}
 
