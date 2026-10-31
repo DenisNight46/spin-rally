@@ -133,4 +133,25 @@ describe("table tennis ball physics", () => {
     expect(placements.every((x) => Math.abs(x) <= 0.65)).toBe(true);
   });
 
+
+  it.each(["easy", "normal", "hard"] as const)("returns a legal serve on %s difficulty", (difficulty) => {
+    const sim = new TableTennisSim(3);
+    const ai = new TableTennisAI(difficulty);
+    sim.startMatch();
+    sim.setInput(0, { ...DEFAULT_INPUT, z: 1.4, serve: true });
+    let returned = false;
+    let lastEvent = sim.state.eventId;
+
+    for (let i = 0; i < 720 && !returned && sim.state.phase === "rally"; i += 1) {
+      ai.update(sim, 1 / 60);
+      sim.step(1 / 120);
+      sim.step(1 / 120);
+      if (sim.state.eventId !== lastEvent) {
+        lastEvent = sim.state.eventId;
+        returned = sim.state.event?.type === "hit" && sim.state.event.side === 1;
+      }
+    }
+
+    expect(returned, `AI failed to return a legal serve on ${difficulty} difficulty`).toBe(true);
+  });
 });
