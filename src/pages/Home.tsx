@@ -3,7 +3,7 @@ import { Bot, Check, ChevronLeft, CircleHelp, Copy, MousePointer2, Palette, Paus
 import { startGame, stopGame } from "@/game/boot";
 import type { GameController, GameUIState } from "@/game/types";
 import type { Difficulty } from "@/game/ai";
-import { NATIONAL_TEAMS, NATIONAL_TEAM_FLAG_CODES, getNationalTeam, type NationalTeam } from "@/game/teams";
+import { NATIONAL_TEAMS, NATIONAL_TEAM_FLAG_CODES, getNationalTeam, type Confederation, type NationalTeam } from "@/game/teams";
 import { storage } from "@/game/storage";
 
 type Panel = "main" | "single" | "online" | "settings" | "help";
@@ -24,6 +24,8 @@ export default function Home() {
   const [roomCode, setRoomCode] = useState("");
   const [copied, setCopied] = useState(false);
   const [selectedTeamId, setSelectedTeamId] = useState(() => storage.get<string>("spinRally.team", "rus"));
+  const [teamRegion, setTeamRegion] = useState<Confederation | "All">("All");
+  const visibleTeams = teamRegion === "All" ? NATIONAL_TEAMS : NATIONAL_TEAMS.filter((team) => team.confederation === teamRegion);
   const selectedTeam = getNationalTeam(selectedTeamId) ?? NATIONAL_TEAMS[11];
   const rivalTeam = getNationalTeam("chn") ?? NATIONAL_TEAMS[0];
   const teamForSide = (side: 0 | 1) => side === (ui?.ownSide ?? 0) ? selectedTeam : rivalTeam;
@@ -151,7 +153,10 @@ export default function Home() {
                     <ColorPicker label="Цвет формы" value={ui.settings.kit} onChange={(value) => updateColor("kit", value)} />
                     <ColorPicker label="Цвет ракетки" value={ui.settings.paddle} onChange={(value) => updateColor("paddle", value)} />
                     <ColorPicker label="Цвет мяча" value={ui.settings.ball} onChange={(value) => updateColor("ball", value)} />
-                    <div className="team-picker"><div className="team-picker-heading"><b>НАЦИОНАЛЬНАЯ СБОРНАЯ</b><small>Флаг и эмблема появятся на табло</small></div><div className="team-grid">{NATIONAL_TEAMS.map((team) => <button type="button" key={team.id} className={`team-option ${selectedTeam.id === team.id ? "selected" : ""}`} onClick={() => chooseTeam(team.id)} aria-pressed={selectedTeam.id === team.id}><TeamCrest team={team} /><TeamFlag team={team} /><span>{team.name}</span></button>)}</div></div>
+                    <div className="team-picker"><div className="team-picker-heading"><b>НАЦИОНАЛЬНАЯ СБОРНАЯ</b><small>Флаг и эмблема появятся на табло</small></div><div className="team-filters" role="group" aria-label="Фильтр сборных">
+                        {([{ id: "All", label: "Все" }, { id: "Asia", label: "Азия" }, { id: "Europe", label: "Европа" }, { id: "Africa", label: "Африка" }, { id: "Americas", label: "Америка" }] as const).map((region) => <button type="button" key={region.id} className={teamRegion === region.id ? "active" : ""} onClick={() => setTeamRegion(region.id)} aria-pressed={teamRegion === region.id}>{region.label}</button>)}
+                      </div>
+                      <div className="team-grid">{visibleTeams.map((team) => <button type="button" key={team.id} className={`team-option ${selectedTeam.id === team.id ? "selected" : ""}`} onClick={() => chooseTeam(team.id)} aria-pressed={selectedTeam.id === team.id}><TeamCrest team={team} /><TeamFlag team={team} /><span>{team.name}</span></button>)}</div></div>
                     <div className="preview-note"><span className="preview-ball" style={{ background: ui.settings.ball }} /> В сетевом матче используется мяч хозяина комнаты</div>
                   </>
                 )}
