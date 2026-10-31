@@ -55,6 +55,13 @@ export function getNationalTeam(id: string): NationalTeam | undefined {
   return NATIONAL_TEAMS.find((team) => team.id === id);
 }
 
+/** Returns a stable, read-only catalogue view for the selected confederation. */
+export function getTeamsByConfederation(confederation: Confederation | "All"): readonly NationalTeam[] {
+  return confederation === "All"
+    ? NATIONAL_TEAMS
+    : NATIONAL_TEAMS.filter((team) => team.confederation === confederation);
+}
+
 /** ISO 3166-1 alpha-2 codes used by FlagCDN for the national team flag assets. */
 export const NATIONAL_TEAM_FLAG_CODES: Readonly<Record<string, string>> = {
   chn: "cn", jpn: "jp", kor: "kr", ind: "in", sgp: "sg", swe: "se", ger: "de", fra: "fr",
