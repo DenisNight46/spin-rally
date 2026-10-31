@@ -54,3 +54,11 @@ export const NATIONAL_TEAMS: readonly NationalTeam[] = [
 export function getNationalTeam(id: string): NationalTeam | undefined {
   return NATIONAL_TEAMS.find((team) => team.id === id);
 }
+
+/** ISO 3166-1 alpha-2 codes used by FlagCDN for the national team flag assets. */
+export const NATIONAL_TEAM_FLAG_CODES: Readonly<Record<string, string>> = {
+  chn: "cn", jpn: "jp", kor: "kr", ind: "in", sgp: "sg", swe: "se", ger: "de", fra: "fr",
+  por: "pt", pol: "pl", rou: "ro", rus: "ru", egy: "eg", bra: "br", usa: "us", aut: "at",
+  hkg: "hk", tpe: "tw", prk: "kp", kaz: "kz", tha: "th", mas: "my", iri: "ir", den: "dk",
+  ita: "it", esp: "es", bel: "be", cro: "hr", srb: "rs", hun: "hu", svk: "sk", slo: "si",
+};
