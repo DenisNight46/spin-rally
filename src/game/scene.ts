@@ -341,7 +341,7 @@ export class SceneView {
       const moveBlend = 1 - Math.exp(-dt * 8.5);
       const bodyX = paddle.x * 0.68 + bodyOffset;
       const bodyZ = sign * (Math.abs(paddle.z) + 0.32);
-      avatar.group.scale.setScalar(side === this.ownSide ? 0.78 : 0.9);
+      avatar.group.scale.setScalar(side === this.ownSide ? 0.64 : 0.82);
       avatar.group.position.x += (bodyX - avatar.group.position.x) * moveBlend;
       avatar.group.position.z += (bodyZ - avatar.group.position.z) * moveBlend;
       avatar.group.rotation.z = -paddle.vx * 0.014;
@@ -418,7 +418,7 @@ export class SceneView {
     if (this.titleMode) return;
     const sign = this.ownSide === 0 ? 1 : -1;
     const mobile = window.innerWidth < 700;
-    this.tempA.set(0, mobile ? 2.55 : 2.5, sign * (mobile ? 4.05 : 3.85));
+    this.tempA.set(0, mobile ? 2.7 : 2.72, sign * (mobile ? 4.55 : 4.45));
     this.camera.position.lerp(this.tempA, Math.min(1, dt * 5));
     this.cameraTarget.set(0, 0.92, -sign * 0.06);
     this.camera.lookAt(this.cameraTarget);
