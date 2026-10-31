@@ -53,7 +53,7 @@ class SpinRallyGame {
   private lastUi = 0;
   private sendClock = 0;
   private servePulse = 0;
-  private humanTarget = { x: 0, y: 1.17, z: 1.4 };
+  private humanTarget = { x: 0, y: 1.17, z: 0.92 };
   private renderLast = performance.now();
   private disposed = false;
 
@@ -117,7 +117,7 @@ class SpinRallyGame {
     this.ownSide = 0;
     this.paused = false;
     this.players = [this.settings, { ...DEFAULT_SETTINGS, name: difficulty === "easy" ? "Робот · Новичок" : difficulty === "hard" ? "Робот · Профи" : "Робот · Любитель", kit: "#ef6a67", paddle: "#26313d" }];
-    this.humanTarget = { x: 0, y: 1.17, z: 1.4 };
+    this.humanTarget = { x: 0, y: 1.17, z: 0.92 };
     this.lastEvent = 0;
     this.sim.startMatch();
     this.scene.setTitleMode(false);
@@ -164,7 +164,7 @@ class SpinRallyGame {
     this.peerConnected = false;
     this.networkError = "";
     this.lastEvent = 0;
-    this.humanTarget = { x: 0, y: 1.17, z: this.ownSide === 0 ? 1.4 : -1.4 };
+    this.humanTarget = { x: 0, y: 1.17, z: this.ownSide === 0 ? 0.92 : -0.92 };
     this.scene.setTitleMode(false);
     this.audio.startMusic();
     const network = new NetworkClient();
@@ -184,7 +184,7 @@ class SpinRallyGame {
     if (message.type === "joined") {
       this.roomId = message.roomId;
       this.ownSide = message.side;
-      this.humanTarget.z = this.ownSide === 0 ? 1.4 : -1.4;
+      this.humanTarget.z = this.ownSide === 0 ? 0.92 : -0.92;
     } else if (message.type === "state") {
       this.netState = message.state;
       this.players = message.players;
@@ -267,7 +267,7 @@ class SpinRallyGame {
     this.humanTarget.x = Math.max(-0.98, Math.min(0.98, this.humanTarget.x));
     this.humanTarget.y = Math.max(0.84, Math.min(1.7, this.humanTarget.y));
     // Keep the player at a fixed distance from the table. Only racket X/Y are controlled.
-    this.humanTarget.z = sign * 1.4;
+    this.humanTarget.z = sign * 0.92;
     this.servePulse = Math.max(0, this.servePulse - dt);
     return {
       x: this.humanTarget.x,
