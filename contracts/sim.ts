@@ -107,7 +107,10 @@ export class TableTennisSim {
 
   /** Accepts variable frame dt but advances the authoritative model at 240 Hz. */
   step(dt: number): void {
-    this.accumulator=Math.min(this.accumulator+Math.max(0,Math.min(dt,0.1)),0.08);
+    // Ignore invalid or non-positive frame deltas instead of poisoning the
+    // accumulator with NaN or advancing the deterministic simulation backwards.
+    if (!Number.isFinite(dt) || dt <= 0) return;
+    this.accumulator=Math.min(this.accumulator+Math.min(dt,0.1),0.08);
     while(this.accumulator>=FIXED_STEP){this.stepFixed(FIXED_STEP);this.accumulator-=FIXED_STEP;}
   }
 
