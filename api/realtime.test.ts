@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it } from "vitest";
 import { createServer, type Server } from "node:http";
 import WebSocket from "ws";
-import { attachRealtime, isValidPaddleInput } from "./realtime";
+import { attachRealtime, isAllowedWebSocketOrigin, isValidPaddleInput } from "./realtime";
 import { DEFAULT_SETTINGS } from "../contracts/sim";
 import type { ServerMessage } from "../contracts/network";
 
@@ -50,6 +50,14 @@ async function openSocket(url: string): Promise<WebSocket> {
 }
 
 describe("online room protocol", () => {
+  it("accepts only same-host browser WebSocket origins", () => {
+    expect(isAllowedWebSocketOrigin(undefined, "spin-rally.onrender.com")).toBe(true);
+    expect(isAllowedWebSocketOrigin("https://spin-rally.onrender.com", "spin-rally.onrender.com")).toBe(true);
+    expect(isAllowedWebSocketOrigin("https://spin-rally.onrender.com.evil.test", "spin-rally.onrender.com")).toBe(false);
+    expect(isAllowedWebSocketOrigin("not a URL", "spin-rally.onrender.com")).toBe(false);
+    expect(isAllowedWebSocketOrigin("https://example.com", undefined)).toBe(false);
+  });
+
   it("rejects malformed or non-finite paddle input before it reaches simulation", () => {
     const valid = { x: 0.2, y: 1.3, z: 1.48, power: false, slice: true, serve: false };
     expect(isValidPaddleInput(valid)).toBe(true);
