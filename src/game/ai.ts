@@ -3,9 +3,9 @@ import { DEFAULT_INPUT, TABLE, type PaddleInput, type TableTennisSim, type Vec3 
 export type Difficulty = "easy" | "normal" | "hard";
 
 const LEVELS = {
-  easy: { reaction: 0.22, speed: 0.76, error: 0.12, anticipation: 0.12 },
-  normal: { reaction: 0.12, speed: 0.94, error: 0.045, anticipation: 0.07 },
-  hard: { reaction: 0.065, speed: 1, error: 0.018, anticipation: 0.035 },
+  easy: { reaction: 0.12, speed: 0.82, error: 0.08, anticipation: 0.10 },
+  normal: { reaction: 0.055, speed: 0.98, error: 0.025, anticipation: 0.06 },
+  hard: { reaction: 0.025, speed: 1, error: 0.012, anticipation: 0.03 },
 } as const;
 
 const clamp = (value: number, min: number, max: number) => Math.max(min, Math.min(max, value));
@@ -123,11 +123,11 @@ export class TableTennisAI {
       const timeToHit = intercept.time;
       // Start moving as soon as the opponent has struck; finish the approach
       // before contact and use a compact upward/forward swing through the ball.
-      const prepare = timeToHit > level.anticipation;
+      // Track the predicted contact point directly. A vertical offset during the final approach caused late misses.
       const targetX = intercept.x + error;
-      const targetY = intercept.y + (prepare ? -0.10 : 0.10);
+      const targetY = intercept.y;
       this.input.x = clamp(targetX, -0.94, 0.94);
-      this.input.y = clamp(targetY, 0.84, 1.66);
+      this.input.y = clamp(targetY, 0.84, 1.70);
       this.input.z = -1.25;
     } else if (!intercept && state.ball.v.z >= 0) {
       // Recover to a balanced ready position while the ball travels away.
