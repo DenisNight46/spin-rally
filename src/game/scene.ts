@@ -334,6 +334,7 @@ export class SceneView {
       this.paddleMaterials[side].color.set(settings[side].paddle);
       const avatar = this.avatars[side];
       avatar.kit.color.set(settings[side].kit);
+      const sign = side === 0 ? 1 : -1;
       const bodyOffset = side === this.ownSide ? (this.ownSide === 0 ? -0.62 : 0.62) : 0;
       const moveBlend = 1 - Math.exp(-dt * 8.5);
       const bodyX = paddle.x * 0.68 + bodyOffset;
@@ -347,7 +348,6 @@ export class SceneView {
       const gait = this.elapsed * (5 + Math.min(10, moveSpeed * 1.2));
       avatar.legs[0].rotation.z = -0.035 - paddle.vx * 0.012 - footwork * Math.sin(gait);
       avatar.legs[1].rotation.z = 0.035 - paddle.vx * 0.012 + footwork * Math.sin(gait);
-      const sign = side === 0 ? 1 : -1;
       this.tempA.set(avatar.group.position.x + (side === 0 ? 0.2 : -0.2), 1.38, sign * 1.87);
       this.tempB.set(paddle.x, paddle.y - 0.08, paddle.z);
       this.tempC.copy(this.tempA).lerp(this.tempB, 0.52);
