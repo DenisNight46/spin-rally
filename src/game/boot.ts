@@ -242,8 +242,11 @@ class SpinRallyGame {
     const sign = this.ownSide === 0 ? 1 : -1;
     const orientation = this.ownSide === 0 ? 1 : -1;
     if (this.input.pointerFresh) {
-      this.humanTarget.x = this.input.pointerX * 0.94 * orientation;
-      this.humanTarget.y = 1.24 - this.input.pointerY * 0.47 + (window.innerWidth < 700 ? 0.08 : 0);
+      const projected = this.scene.pointerToRacket(this.input.pointerX, this.input.pointerY, this.ownSide);
+      if (projected) {
+        this.humanTarget.x = projected.x;
+        this.humanTarget.y = projected.y;
+      }
       this.input.pointerFresh = false;
     }
     if (this.input.x !== 0) this.humanTarget.x += this.input.x * dt * 1.85 * orientation;
