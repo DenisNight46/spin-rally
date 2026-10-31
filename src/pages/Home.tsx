@@ -151,7 +151,7 @@ export default function Home() {
                     <ColorPicker label="Цвет формы" value={ui.settings.kit} onChange={(value) => updateColor("kit", value)} />
                     <ColorPicker label="Цвет ракетки" value={ui.settings.paddle} onChange={(value) => updateColor("paddle", value)} />
                     <ColorPicker label="Цвет мяча" value={ui.settings.ball} onChange={(value) => updateColor("ball", value)} />
-                    <div className="team-picker"><div className="team-picker-heading"><b>НАЦИОНАЛЬНАЯ СБОРНАЯ</b><small>Флаг и эмблема появятся на табло</small></div><div className="team-grid">{NATIONAL_TEAMS.map((team) => <button type="button" key={team.id} className={`team-option ${selectedTeam.id === team.id ? "selected" : ""}`} onClick={() => chooseTeam(team.id)} aria-pressed={selectedTeam.id === team.id}><TeamCrest team={team} /><span className="team-flag">{team.flag}</span><span>{team.name}</span></button>)}</div></div>
+                    <div className="team-picker"><div className="team-picker-heading"><b>НАЦИОНАЛЬНАЯ СБОРНАЯ</b><small>Флаг и эмблема появятся на табло</small></div><div className="team-grid">{NATIONAL_TEAMS.map((team) => <button type="button" key={team.id} className={`team-option ${selectedTeam.id === team.id ? "selected" : ""}`} onClick={() => chooseTeam(team.id)} aria-pressed={selectedTeam.id === team.id}><TeamCrest team={team} /><TeamFlag team={team} /><span>{team.name}</span></button>)}</div></div>
                     <div className="preview-note"><span className="preview-ball" style={{ background: ui.settings.ball }} /> В сетевом матче используется мяч хозяина комнаты</div>
                   </>
                 )}
@@ -242,7 +242,14 @@ function ColorPicker({ label, value, onChange }: { label: string; value: string;
 }
 
 function PlayerScore({ name, color, team, score, games, serving, right = false }: { name: string; color: string; team: NationalTeam; score: number; games: number; serving: boolean; right?: boolean }) {
-  return <div className={`player-score ${right ? "right" : ""}`}><div className="player-info"><span className="player-name"><i style={{ background: color }} />{team.flag} {name || "Игрок"}{serving && <span className="serve-dot" title="Подача" />}</span><small><TeamCrest team={team} /> {team.shortName} · Партии: {games}</small></div><b>{score}</b></div>;
+  return <div className={`player-score ${right ? "right" : ""}`}><div className="player-info"><span className="player-name"><i style={{ background: color }} /><TeamFlag team={team} /> {name || "Игрок"}{serving && <span className="serve-dot" title="Подача" />}</span><small><TeamCrest team={team} /> {team.shortName} · Партии: {games}</small></div><b>{score}</b></div>;
+}
+
+const FLAG_CODES: Record<string, string> = { chn: "cn", jpn: "jp", kor: "kr", ind: "in", sgp: "sg", swe: "se", ger: "de", fra: "fr", por: "pt", pol: "pl", rou: "ro", rus: "ru", egy: "eg", bra: "br", usa: "us", aut: "at" };
+
+function TeamFlag({ team }: { team: NationalTeam }) {
+  const code = FLAG_CODES[team.id];
+  return <img className="team-flag-image" src={`https://flagcdn.com/w40/${code}.png`} alt={`Флаг: ${team.name}`} loading="lazy" />;
 }
 
 function TeamCrest({ team }: { team: NationalTeam }) {
