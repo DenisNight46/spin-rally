@@ -1,13 +1,10 @@
-const KEYS: Record<string, ["x" | "z", number]> = {
+const KEYS: Record<string, ["x", number]> = {
   KeyA: ["x", -1], ArrowLeft: ["x", -1],
   KeyD: ["x", 1], ArrowRight: ["x", 1],
-  KeyW: ["z", 1], ArrowUp: ["z", 1],
-  KeyS: ["z", -1], ArrowDown: ["z", -1],
 };
 
 export class Input {
   x = 0;
-  z = 0;
   pointerX = 0;
   pointerY = 0;
   pointerFresh = false;
@@ -63,13 +60,11 @@ export class Input {
 
   private recompute(): void {
     this.x = 0;
-    this.z = 0;
     for (const code of this.held) {
       const key = KEYS[code];
-      if (key) this[key[0]] += key[1];
+      if (key) this.x += key[1];
     }
     this.x = Math.max(-1, Math.min(1, this.x));
-    this.z = Math.max(-1, Math.min(1, this.z));
   }
 
   isDown(code: string): boolean {
