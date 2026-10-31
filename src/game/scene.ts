@@ -213,7 +213,7 @@ export class SceneView {
     const hair = new THREE.Mesh(new THREE.SphereGeometry(0.128, 16, 8, 0, Math.PI * 2, 0, Math.PI * 0.48), dark);
     hair.position.y = 1.635;
     group.add(hair);
-    const legs: [THREE.Mesh, THREE.Mesh] = [0, 1].map((index) => {
+    const createLeg = (index: number): THREE.Mesh => {
       const x = index === 0 ? -0.11 : 0.11;
       const leg = new THREE.Mesh(new THREE.CapsuleGeometry(0.06, 0.42, 4, 8), dark);
       leg.position.set(x, 0.55, 0);
@@ -225,7 +225,8 @@ export class SceneView {
       shoe.castShadow = true;
       group.add(shoe);
       return leg;
-    }) as [THREE.Mesh, THREE.Mesh];
+    };
+    const legs: [THREE.Mesh, THREE.Mesh] = [createLeg(0), createLeg(1)];
     this.scene.add(group);
     const upperArm = new THREE.Mesh(new THREE.CylinderGeometry(0.047, 0.052, 1, 10), skin);
     const forearm = new THREE.Mesh(new THREE.CylinderGeometry(0.036, 0.044, 1, 10), skin);
