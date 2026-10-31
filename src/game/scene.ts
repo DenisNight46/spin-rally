@@ -38,6 +38,10 @@ export class SceneView {
   private tempB = new THREE.Vector3();
   private tempC = new THREE.Vector3();
   private tempDir = new THREE.Vector3();
+  private pointerRaycaster = new THREE.Raycaster();
+  private pointerNdc = new THREE.Vector2();
+  private pointerPlane = new THREE.Plane(new THREE.Vector3(0, 0, 1), -1.48);
+  private pointerPoint = new THREE.Vector3();
   private elapsed = 0;
   private titleMode = true;
 
@@ -408,13 +412,15 @@ export class SceneView {
 
   /** Convert viewport pointer coordinates into the racket plane in world space. */
   pointerToRacket(pointerX: number, pointerY: number, side: Side): { x: number; y: number } | null {
-    const raycaster = new THREE.Raycaster();
-    raycaster.setFromCamera(new THREE.Vector2(pointerX, pointerY), this.camera);
+    this.pointerNdc.set(pointerX, pointerY);
     const sign = side === 0 ? 1 : -1;
-    const plane = new THREE.Plane(new THREE.Vector3(0, 0, 1), -sign * 1.48);
-    const point = new THREE.Vector3();
-    if (!raycaster.ray.intersectPlane(plane, point)) return null;
-    return { x: THREE.MathUtils.clamp(point.x, -0.98, 0.98), y: THREE.MathUtils.clamp(point.y, 0.84, 1.7) };
+    this.pointerPlane.constant = -sign * 1.48;
+    this.pointerRaycaster.setFromCamera(this.pointerNdc, this.camera);
+    if (!this.pointerRaycaster.ray.intersectPlane(this.pointerPlane, this.pointerPoint)) return null;
+    return {
+      x: THREE.MathUtils.clamp(this.pointerPoint.x, -0.98, 0.98),
+      y: THREE.MathUtils.clamp(this.pointerPoint.y, 0.84, 1.7),
+    };
   }
 
   private updateCamera(dt: number): void {
