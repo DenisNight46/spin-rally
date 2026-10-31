@@ -341,7 +341,8 @@ export class SceneView {
       const moveBlend = 1 - Math.exp(-dt * 8.5);
       const bodyX = paddle.x * 0.68 + bodyOffset;
       const bodyZ = sign * (Math.abs(paddle.z) + 0.32);
-      avatar.group.scale.setScalar(side === this.ownSide ? 0.64 : 0.82);
+      const avatarScale = side === this.ownSide ? 0.64 : 0.82;
+      avatar.group.scale.setScalar(avatarScale);
       avatar.group.position.x += (bodyX - avatar.group.position.x) * moveBlend;
       avatar.group.position.z += (bodyZ - avatar.group.position.z) * moveBlend;
       avatar.group.rotation.z = -paddle.vx * 0.014;
@@ -351,7 +352,13 @@ export class SceneView {
       const gait = this.elapsed * (5 + Math.min(10, moveSpeed * 1.2));
       avatar.legs[0].rotation.z = -0.035 - paddle.vx * 0.012 - footwork * Math.sin(gait);
       avatar.legs[1].rotation.z = 0.035 - paddle.vx * 0.012 + footwork * Math.sin(gait);
-      this.tempA.set(avatar.group.position.x + (side === 0 ? 0.2 : -0.2), 1.38, sign * 1.87);
+      // Limbs are world-space meshes, so the shoulder anchor must include
+      // avatar scale; otherwise the arm floats above the shrunken torso.
+      this.tempA.set(
+        avatar.group.position.x + (side === 0 ? 0.2 : -0.2) * avatarScale,
+        1.38 * avatarScale,
+        avatar.group.position.z + sign * 0.07 * avatarScale,
+      );
       this.tempB.set(paddle.x, paddle.y - 0.08, paddle.z);
       this.tempC.copy(this.tempA).lerp(this.tempB, 0.52);
       this.tempC.y -= 0.055;
