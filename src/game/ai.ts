@@ -8,6 +8,8 @@ const LEVELS = {
   hard: { reaction: 0.025, speed: 1, error: 0.012, anticipation: 0.03 },
 } as const;
 
+const AI_RACKET_Z = -1.55;
+
 const clamp = (value: number, min: number, max: number) => Math.max(min, Math.min(max, value));
 const cross = (a: Vec3, b: Vec3): Vec3 => ({
   x: a.y * b.z - a.z * b.y,
@@ -15,14 +17,9 @@ const cross = (a: Vec3, b: Vec3): Vec3 => ({
   z: a.x * b.y - a.y * b.x,
 });
 
-/**
- * Predict the ball's future position at the AI racket plane.
- * This uses the same gravity, drag, Magnus lift and table bounce conventions
- * as the authoritative simulation, rather than aiming at the current ball.
- */
 function predictIntercept(sim: TableTennisSim): { x: number; y: number; time: number } | null {
   const ball = sim.state.ball;
-  const planeZ = -1.25;
+  const planeZ = AI_RACKET_Z;
   if (ball.v.z >= -0.05 || ball.p.z <= planeZ) return null;
 
   let p = { ...ball.p };
@@ -60,11 +57,7 @@ function predictIntercept(sim: TableTennisSim): { x: number; y: number; time: nu
 
     if (previousZ > planeZ && p.z <= planeZ) {
       const fraction = clamp((previousZ - planeZ) / Math.max(1e-6, previousZ - p.z), 0, 1);
-      return {
-        x: p.x,
-        y: p.y,
-        time: (i + fraction) * dt,
-      };
+      return { x: p.x, y: p.y, time: (i + fraction) * dt };
     }
     previousZ = p.z;
     if (p.y < TABLE.y - 0.1 || Math.abs(p.x) > 1.6 || p.z < -2.1) return null;
@@ -76,14 +69,14 @@ export class TableTennisAI {
   private think = 0;
   private clock = 0;
   private serveDelay = 0;
-  private input: PaddleInput = { ...DEFAULT_INPUT, z: -1.25 };
+  private input: PaddleInput = { ...DEFAULT_INPUT, z: AI_RACKET_Z };
 
   constructor(private difficulty: Difficulty = "normal") {}
 
   reset(): void {
     this.think = 0;
     this.serveDelay = 0;
-    this.input = { ...DEFAULT_INPUT, z: -1.25 };
+    this.input = { ...DEFAULT_INPUT, z: AI_RACKET_Z };
   }
 
   update(sim: TableTennisSim, dt: number): void {
@@ -99,7 +92,7 @@ export class TableTennisAI {
     if (state.phase === "serve") {
       this.input.x += (0 - this.input.x) * Math.min(1, dt * 4);
       this.input.y += (1.17 - this.input.y) * Math.min(1, dt * 4);
-      this.input.z = -1.25;
+      this.input.z = AI_RACKET_Z;
       if (state.server === 1 && this.serveDelay > 0.72) {
         this.input.serve = true;
         this.serveDelay = 0;
@@ -112,6 +105,7 @@ export class TableTennisAI {
       this.serveDelay = 0;
       this.input.x += (0 - this.input.x) * Math.min(1, dt * 2.5);
       this.input.y += (1.17 - this.input.y) * Math.min(1, dt * 2.5);
+      this.input.z = AI_RACKET_Z;
       sim.setInput(1, this.input);
       return;
     }
@@ -120,20 +114,13 @@ export class TableTennisAI {
     if (intercept && this.think <= 0) {
       this.think = level.reaction;
       const error = Math.sin(this.clock * 7.13 + state.rallyHits * 2.7) * level.error;
-      const timeToHit = intercept.time;
-      // Start moving as soon as the opponent has struck; finish the approach
-      // before contact and use a compact upward/forward swing through the ball.
-      // Track the predicted contact point directly. A vertical offset during the final approach caused late misses.
-      const targetX = intercept.x + error;
-      const targetY = intercept.y;
-      this.input.x = clamp(targetX, -0.94, 0.94);
-      this.input.y = clamp(targetY, 0.84, 1.70);
-      this.input.z = -1.25;
+      this.input.x = clamp(intercept.x + error, -0.94, 0.94);
+      this.input.y = clamp(intercept.y, 0.84, 1.70);
+      this.input.z = AI_RACKET_Z;
     } else if (!intercept && state.ball.v.z >= 0) {
-      // Recover to a balanced ready position while the ball travels away.
       this.input.x += (0 - this.input.x) * Math.min(1, dt * 2.2 * level.speed);
       this.input.y += (1.17 - this.input.y) * Math.min(1, dt * 2.2);
-      this.input.z = -1.25;
+      this.input.z = AI_RACKET_Z;
     }
 
     sim.setInput(1, this.input);
