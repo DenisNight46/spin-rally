@@ -247,7 +247,6 @@ class SpinRallyGame {
       this.input.pointerFresh = false;
     }
     if (this.input.x !== 0) this.humanTarget.x += this.input.x * dt * 1.85 * orientation;
-    if (this.input.z !== 0) this.humanTarget.z -= this.input.z * dt * 0.78 * sign;
 
     // Soft contact assistance: predict the incoming ball at the player's
     // racket plane and gently bias the target toward it. The player still
@@ -267,9 +266,8 @@ class SpinRallyGame {
 
     this.humanTarget.x = Math.max(-0.98, Math.min(0.98, this.humanTarget.x));
     this.humanTarget.y = Math.max(0.84, Math.min(1.7, this.humanTarget.y));
-    this.humanTarget.z = this.ownSide === 0
-      ? Math.max(0.93, Math.min(1.72, this.humanTarget.z))
-      : Math.max(-1.72, Math.min(-0.93, this.humanTarget.z));
+    // Keep the player at a fixed distance from the table. Only racket X/Y are controlled.
+    this.humanTarget.z = sign * 1.4;
     this.servePulse = Math.max(0, this.servePulse - dt);
     return {
       x: this.humanTarget.x,
