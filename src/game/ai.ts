@@ -3,9 +3,9 @@ import { DEFAULT_INPUT, TABLE, type PaddleInput, type TableTennisSim, type Vec3 
 export type Difficulty = "easy" | "normal" | "hard";
 
 const LEVELS = {
-  easy: { reaction: 0.075, speed: 4.8, error: 0.055, anticipation: 0.10 },
-  normal: { reaction: 0.040, speed: 7.2, error: 0.022, anticipation: 0.18 },
-  hard: { reaction: 0.018, speed: 10.0, error: 0.006, anticipation: 0.30 },
+  easy: { reaction: 0.075, speed: 0.78, error: 0.055, anticipation: 0.10 },
+  normal: { reaction: 0.040, speed: 0.95, error: 0.022, anticipation: 0.18 },
+  hard: { reaction: 0.018, speed: 1.10, error: 0.006, anticipation: 0.30 },
 } as const;
 
 const AI_RACKET_Z = -1.48;
@@ -131,7 +131,7 @@ export class TableTennisAI {
       // and track it faster. The paddle still has to travel through the
       // simulation's physical acceleration/speed limits.
       const anticipation = clamp(level.anticipation / Math.max(intercept.time, 0.04), 0.12, 1);
-      const tracking = Math.min(1, dt * level.speed * anticipation);
+      const tracking = clamp(dt * 60 * level.speed * (0.75 + anticipation), 0, 1);
       this.input.x += (clamp(intercept.x + error, -0.94, 0.94) - this.input.x) * tracking;
       this.input.y += (clamp(intercept.y, 0.84, 1.70) - this.input.y) * tracking;
       this.input.z = AI_RACKET_Z;
