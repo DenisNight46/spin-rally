@@ -86,7 +86,7 @@ export class TableTennisSim {
     const target=this.inputs[side], sign=sideSign(side);
     target.x=clamp(Number.isFinite(input.x)?input.x:0,-0.98,0.98);
     target.y=clamp(Number.isFinite(input.y)?input.y:1.16,0.84,1.7);
-    target.z=clamp(Number.isFinite(input.z)?input.z:sign*0.92,sign>0?0.72:-1.12,sign>0?1.12:-0.72);
+    target.z=clamp(Number.isFinite(input.z)?input.z:sign*0.92,sign>0?0.72:-1.42,sign>0?1.12:-0.72);
     target.power=false; target.slice=false; target.serve=Boolean(input.serve);
   }
   getInput(side: Side): PaddleInput { return this.inputs[side]; }
