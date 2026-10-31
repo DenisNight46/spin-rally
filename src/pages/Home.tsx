@@ -7,9 +7,9 @@ import type { Difficulty } from "@/game/ai";
 type Panel = "main" | "single" | "online" | "settings" | "help";
 
 const DIFFICULTIES: Array<{ id: Difficulty; title: string; text: string; bars: number }> = [
-  { id: "easy", title: "Новичок", text: "Спокойный темп и время прицелиться", bars: 1 },
-  { id: "normal", title: "Любитель", text: "Быстрые розыгрыши и топспин", bars: 2 },
-  { id: "hard", title: "Профи", text: "Точные удары и минимум ошибок", bars: 3 },
+  { id: "easy", title: "Новичок", text: "Медленная реакция и больше неточностей", bars: 1 },
+  { id: "normal", title: "Любитель", text: "Сбалансированные скорость и точность", bars: 2 },
+  { id: "hard", title: "Профи", text: "Быстрая реакция и точное позиционирование", bars: 3 },
 ];
 
 const COLORS = ["#27d3a2", "#38a8ff", "#ef476f", "#f4b942", "#f7fbff", "#9b7bff", "#202b36"];
@@ -114,7 +114,7 @@ export default function Home() {
                 )}
                 {panel === "single" && (
                   <>
-                    <PanelTitle title="СЛОЖНОСТЬ" subtitle="Соперник адаптирует позицию и удары" onBack={() => setPanel("main")} />
+                    <PanelTitle title="СЛОЖНОСТЬ" subtitle="Уровень меняет реакцию, скорость и точность" onBack={() => setPanel("main")} />
                     <div className="difficulty-list">
                       {DIFFICULTIES.map((level) => (
                         <button className="difficulty" key={level.id} onClick={() => controller.current?.startSingle(level.id)}>
