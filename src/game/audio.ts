@@ -7,8 +7,6 @@
 export type SfxId = "move" | "hit" | "pickup" | "ui" | "explosion" | "win" | "lose" | "bounce" | "net" | "serve" | "score";
 
 const MUTE_KEY = "game.muted";
-const clamp = (v: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, v));
-
 function readMuted(): boolean {
   try { return localStorage.getItem(MUTE_KEY) === "1"; } catch { return false; }
 }
@@ -179,7 +177,6 @@ export class AudioSystem {
         break;
       case "win":
         [523.25, 659.25, 783.99, 1046.5].forEach((f, i) => {
-          const delay = i * 0.13;
           this.tone(f, f * 1.005, 0.34, 0.105, "sine", this.master!);
         });
         break;
