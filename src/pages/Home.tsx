@@ -241,6 +241,11 @@ function ColorPicker({ label, value, onChange }: { label: string; value: string;
   return <div className="color-field"><span>{label}</span><div className="swatches">{COLORS.map((color) => <button key={color} className={value === color ? "selected" : ""} style={{ background: color }} onClick={() => onChange(color)} aria-label={`${label}: ${color}`}>{value === color && <Check size={13} />}</button>)}<label className="custom-color" style={{ background: value }}><input type="color" value={value} onChange={(event) => onChange(event.target.value)} /><Palette size={13} /></label></div></div>;
 }
 
-function PlayerScore({ name, color, score, games, serving, right = false }: { name: string; color: string; score: number; games: number; serving: boolean; right?: boolean }) {
-  return <div className={`player-score ${right ? "right" : ""}`}><div className="player-info"><span className="player-name"><i style={{ background: color }} />{name || "Игрок"}{serving && <span className="serve-dot" title="Подача" />}</span><small>Партии: {games}</small></div><b>{score}</b></div>;
+function PlayerScore({ name, color, team, score, games, serving, right = false }: { name: string; color: string; team: NationalTeam; score: number; games: number; serving: boolean; right?: boolean }) {
+  return <div className={`player-score ${right ? "right" : ""}`}><div className="player-info"><span className="player-name"><i style={{ background: color }} />{team.flag} {name || "Игрок"}{serving && <span className="serve-dot" title="Подача" />}</span><small><TeamCrest team={team} /> {team.shortName} · Партии: {games}</small></div><b>{score}</b></div>;
+}
+
+function TeamCrest({ team }: { team: NationalTeam }) {
+  const { primary, secondary, accent, initials } = team.crest;
+  return <svg className="team-crest" viewBox="0 0 40 46" role="img" aria-label={`Эмблема сборной ${team.name}`}><path d="M20 2 36 8v13c0 10-6 17-16 23C10 38 4 31 4 21V8z" fill={primary} stroke={secondary} strokeWidth="2"/><path d="M20 7 31 11v10c0 7-4 12-11 17-7-5-11-10-11-17V11z" fill="none" stroke={accent} strokeWidth="1.2"/><circle cx="20" cy="19" r="8" fill={secondary} opacity=".94"/><text x="20" y="22.5" textAnchor="middle" fontSize="9" fontWeight="800" fill={primary}>{initials}</text><path d="m20 29 2 4 4 .5-3 3 .7 4.2-3.7-2-3.7 2 .7-4.2-3-3 4-.5z" fill={accent}/></svg>;
 }
