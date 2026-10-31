@@ -82,6 +82,8 @@ export class TableTennisAI {
   private think = 0;
   private clock = 0;
   private serveDelay = 0;
+  private serveIndex = 0;
+  private serveTargetX: number | null = null;
   private plannedRally = -1;
   private shotOffset = 0;
   private shotHeight = 0;
@@ -92,6 +94,8 @@ export class TableTennisAI {
   reset(): void {
     this.think = 0;
     this.serveDelay = 0;
+    this.serveIndex = 0;
+    this.serveTargetX = null;
     this.plannedRally = -1;
     this.shotOffset = 0;
     this.shotHeight = 0;
@@ -109,12 +113,22 @@ export class TableTennisAI {
     this.input.slice = false;
 
     if (state.phase === "serve") {
-      this.input.x += (0 - this.input.x) * Math.min(1, dt * 4);
+      if (state.server === 1 && this.serveTargetX === null) {
+        // Rotate through distinct legal service placements instead of feeding
+        // the same predictable ball every point.
+        const patterns = [-0.48, 0.48, -0.16, 0.18, 0.02];
+        const spread = this.difficulty === "easy" ? 0.72 : this.difficulty === "normal" ? 0.88 : 1;
+        this.serveTargetX = patterns[this.serveIndex % patterns.length] * spread;
+        this.serveIndex += 1;
+      }
+      const serveX = state.server === 1 ? this.serveTargetX ?? 0 : 0;
+      this.input.x += (serveX - this.input.x) * Math.min(1, dt * 4);
       this.input.y += (1.17 - this.input.y) * Math.min(1, dt * 4);
       this.input.z = AI_RACKET_Z;
       if (state.server === 1 && this.serveDelay > 0.72) {
         this.input.serve = true;
         this.serveDelay = 0;
+        this.serveTargetX = null;
       }
       sim.setInput(1, this.input);
       return;
@@ -122,6 +136,7 @@ export class TableTennisAI {
 
     if (state.phase !== "rally") {
       this.serveDelay = 0;
+      this.serveTargetX = null;
       this.input.x += (0 - this.input.x) * Math.min(1, dt * 2.5);
       this.input.y += (1.17 - this.input.y) * Math.min(1, dt * 2.5);
       this.input.z = AI_RACKET_Z;
