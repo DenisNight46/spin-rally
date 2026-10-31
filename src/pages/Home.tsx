@@ -3,7 +3,7 @@ import { Bot, Check, ChevronLeft, CircleHelp, Copy, MousePointer2, Palette, Paus
 import { startGame, stopGame } from "@/game/boot";
 import type { GameController, GameUIState } from "@/game/types";
 import type { Difficulty } from "@/game/ai";
-import { NATIONAL_TEAMS, getNationalTeam, type NationalTeam } from "@/game/teams";
+import { NATIONAL_TEAMS, NATIONAL_TEAM_FLAG_CODES, getNationalTeam, type NationalTeam } from "@/game/teams";
 import { storage } from "@/game/storage";
 
 type Panel = "main" | "single" | "online" | "settings" | "help";
@@ -245,10 +245,10 @@ function PlayerScore({ name, color, team, score, games, serving, right = false }
   return <div className={`player-score ${right ? "right" : ""}`}><div className="player-info"><span className="player-name"><i style={{ background: color }} /><TeamFlag team={team} /> {name || "Игрок"}{serving && <span className="serve-dot" title="Подача" />}</span><small><TeamCrest team={team} /> {team.shortName} · Партии: {games}</small></div><b>{score}</b></div>;
 }
 
-const FLAG_CODES: Record<string, string> = { chn: "cn", jpn: "jp", kor: "kr", ind: "in", sgp: "sg", swe: "se", ger: "de", fra: "fr", por: "pt", pol: "pl", rou: "ro", rus: "ru", egy: "eg", bra: "br", usa: "us", aut: "at", hkg: "hk", tpe: "tw", prk: "kp", kaz: "kz", tha: "th", mas: "my", iri: "ir", den: "dk", ita: "it", esp: "es", bel: "be", cro: "hr", srb: "rs", hun: "hu", svk: "sk", slo: "si" };
+
 
 function TeamFlag({ team }: { team: NationalTeam }) {
-  const code = FLAG_CODES[team.id];
+  const code = NATIONAL_TEAM_FLAG_CODES[team.id];
   return <img className="team-flag-image" src={`https://flagcdn.com/w40/${code}.png`} alt={`Флаг: ${team.name}`} loading="lazy" />;
 }
 
