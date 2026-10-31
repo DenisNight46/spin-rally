@@ -151,7 +151,7 @@ export default function Home() {
                   <>
                     <PanelTitle title="КАК ИГРАТЬ" subtitle="Простое управление — глубокая механика" onBack={() => setPanel("main")} />
                     <div className="help-list">
-                      <div><MousePointer2 /><span><b>Двигай ракетку</b><small>Мышь или палец задают положение, скорость и естественный угол ракетки.</small></span></div>
+                      <div><MousePointer2 /><span><b>Двигай ракетку</b><small>Мышь или палец задают положение, скорость и естественный угол. На ПК также доступны WASD и стрелки.</small></span></div>
                       <div><MousePointer2 /><span><b>Создавай вращение</b><small>Проводи ракеткой по мячу: движение вверх/вниз и в стороны создаёт топспин, подрезку и боковое вращение.</small></span></div>
                       <div><MousePointer2 /><span><b>Подача</b><small>Нажми левую кнопку мыши или кнопку подачи, когда наступит твоя очередь.</small></span></div>
                       <div><Trophy /><span><b>Счёт</b><small>11 очков с преимуществом 2. Две подачи, при 10:10 — по одной.</small></span></div>
@@ -185,7 +185,7 @@ export default function Home() {
             {ui.state.phase === "serve" && ui.state.server === ui.ownSide && !waitingOnline && (
               <button className="serve-button" onClick={() => controller.current?.serve()}><span>ПОДАЧА</span><small>Пробел или нажми</small></button>
             )}
-            <div className="control-hint glass"><MousePointer2 size={15} /><span>Мышь — положение и вращение ракетки</span><i />Клик — подача · A/D — влево/вправо</div>
+            <div className="control-hint glass"><MousePointer2 size={15} /><span>Мышь — ракетка и вращение</span><i />W/S — выше/ниже · A/D — влево/вправо · клик — подача</div>
           </>
         )}
 
