@@ -29,7 +29,7 @@ function racketImpact(targetX: number, targetY: number) {
 
 describe("online snapshot interpolation", () => {
   it("smooths continuous ball and paddle motion", async () => {
-    const { interpolateMatchStates } = await import("../src/game/network");
+    const { interpolateMatchStates } = await import("../src/game/interpolation");
     const first = new TableTennisSim(101);
     const second = new TableTennisSim(101);
     first.startMatch();
@@ -46,7 +46,7 @@ describe("online snapshot interpolation", () => {
   });
 
   it("does not interpolate through a point or phase transition", async () => {
-    const { interpolateMatchStates } = await import("../src/game/network");
+    const { interpolateMatchStates } = await import("../src/game/interpolation");
     const first = new TableTennisSim(103);
     const second = new TableTennisSim(103);
     first.startMatch();
