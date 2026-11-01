@@ -790,3 +790,54 @@ describe("precision challenge target", () => {
     expect(isAccuracyTargetHit({ x: Number.NaN, z: -0.94 })).toBe(false);
   });
 });
+
+
+describe("AI legal returns on every difficulty", () => {
+  it.each(["easy", "normal", "hard"] as const)(
+    "%s bot returns the ball onto the player's half against varied incoming spin",
+    (difficulty) => {
+      const spinProfiles = [
+        { x: 0, y: 0, z: 0 },
+        { x: 34, y: 0, z: 0 },
+        { x: -34, y: 0, z: 0 },
+        { x: 0, y: 0, z: 28 },
+        { x: 22, y: -12, z: 18 },
+      ];
+
+      for (const spin of spinProfiles) {
+        const sim = new TableTennisSim(311);
+        const ai = new TableTennisAI(difficulty);
+        sim.startMatch();
+        sim.state.phase = "rally";
+        sim.state.rallyHits = 2;
+        sim.state.ball = {
+          p: { x: 0.12, y: 1.12, z: -0.88 },
+          v: { x: 0.32, y: 0.12, z: -3.25 },
+          spin: { ...spin },
+          lastHitter: 0,
+          bounces: 1,
+          firstBounce: 0,
+          serve: false,
+        };
+
+        let aiHit = false;
+        let legalReturn = false;
+        let lastEvent = sim.state.eventId;
+        for (let frame = 0; frame < 720 && !legalReturn && sim.state.phase === "rally"; frame += 1) {
+          ai.update(sim, 1 / 60);
+          sim.step(1 / 120);
+          sim.step(1 / 120);
+          if (sim.state.eventId === lastEvent) continue;
+          lastEvent = sim.state.eventId;
+          const event = sim.state.event;
+          if (event?.type === "hit" && event.side === 1) aiHit = true;
+          if (aiHit && event?.type === "bounce" && event.side === 0) legalReturn = true;
+        }
+
+        expect(aiHit, `${difficulty} bot failed to contact incoming ball with spin ${JSON.stringify(spin)}`).toBe(true);
+        expect(legalReturn, `${difficulty} bot contacted the ball but did not return it legally; phase=${sim.state.phase}, message=${sim.state.message}, spin=${JSON.stringify(spin)}`).toBe(true);
+        expect(sim.state.ball.lastHitter).toBe(1);
+      }
+    },
+  );
+});
