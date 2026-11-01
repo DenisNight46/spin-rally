@@ -488,7 +488,9 @@ describe("table tennis ball physics", () => {
       const bounceSides: number[] = [];
       let lastEvent = sim.state.eventId;
 
-      for (let frame = 0; frame < 1200 && bounceSides.length < 2 && sim.state.phase === "serve" || frame < 1200 && bounceSides.length < 2 && sim.state.phase === "rally"; frame += 1) {
+      for (let frame = 0; frame < 1200 && bounceSides.length < 2; frame += 1) {
+        const phase: string = String(sim.state.phase);
+        if (phase !== "serve" && phase !== "rally") break;
         ai.update(sim, 1 / 60);
         sim.step(1 / 120);
         if (sim.state.eventId !== lastEvent) {
