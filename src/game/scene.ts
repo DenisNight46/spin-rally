@@ -48,6 +48,8 @@ export class SceneView {
   private pointerPlane = new THREE.Plane(new THREE.Vector3(0, 0, 1), -1.48);
   private pointerPoint = new THREE.Vector3();
   private elapsed = 0;
+  private ballFlash = 0;
+  private ballFlashColor = new THREE.Color("#ffffff");
   private titleMode = true;
 
   constructor(canvas: HTMLCanvasElement) {
@@ -332,6 +334,14 @@ export class SceneView {
     if (event.type === "point" || event.type === "game") this.judgeGesture = 1;
     if (!["hit", "bounce", "net", "serve"].includes(event.type)) return;
 
+    this.ballFlash = 1;
+    this.ballFlashColor.set(
+      event.type === "hit" ? "#fff0c9"
+        : event.type === "bounce" ? "#9cecff"
+          : event.type === "net" ? "#ff9bb0"
+            : "#c9ffe9",
+    );
+
     // Each contact gets its own visual language: a sharp paddle strike,
     // a low table bounce, a warning at the net, or a soft serve cue.
     const profile = event.type === "hit"
@@ -385,9 +395,10 @@ export class SceneView {
       this.spinRing.quaternion.setFromUnitVectors(Y_AXIS, this.tempDir);
       this.spinRing.rotateY(dt * (2.2 + spinVisual.strength * 5));
     }
-    this.ballMaterial.emissiveIntensity = 0.11 + spinVisual.strength * 0.58;
+    this.ballFlash = Math.max(0, this.ballFlash - dt * 6.5);
+    this.ballMaterial.emissiveIntensity = 0.11 + spinVisual.strength * 0.58 + this.ballFlash * 0.85;
     this.ballMaterial.color.set(settings[0].ball);
-    this.ballMaterial.emissive.set(settings[0].ball);
+    this.ballMaterial.emissive.set(settings[0].ball).lerp(this.ballFlashColor, this.ballFlash * 0.72);
     for (let side = 0 as Side; side <= 1; side = (side + 1) as Side) {
       const paddle = state.paddles[side];
       const group = this.paddles[side];
