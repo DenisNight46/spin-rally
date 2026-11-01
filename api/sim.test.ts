@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { DEFAULT_INPUT, TABLE, TableTennisSim } from "../contracts/sim";
 import { planAIShot, predictAIIntercept, TableTennisAI } from "../src/game/ai";
-import { predictRacketIntercept } from "../src/game/trajectory";
+import { getContactAssistWeight, predictRacketIntercept } from "../src/game/trajectory";
 import { NATIONAL_TEAMS, NATIONAL_TEAM_FLAG_CODES, getNationalTeam, getTeamsByConfederation } from "../src/game/teams";
 
 function racketImpact(targetX: number, targetY: number) {
@@ -708,5 +708,27 @@ describe("network heartbeat health", () => {
     const { isHeartbeatTimedOut } = await import("../src/game/network-health");
     expect(isHeartbeatTimedOut(Number.NaN, 10_000)).toBe(false);
     expect(isHeartbeatTimedOut(1_000, Number.POSITIVE_INFINITY)).toBe(false);
+  });
+});
+
+
+describe("near-miss contact assistance", () => {
+  it("fades out for distant or non-imminent contacts", () => {
+    expect(getContactAssistWeight(0.43, 0.1, true)).toBe(0);
+    expect(getContactAssistWeight(0.1, 0.39, false)).toBe(0);
+    expect(getContactAssistWeight(Number.NaN, 0.1, true)).toBe(0);
+  });
+
+  it("nudges only nearby targets and strengthens as contact approaches", () => {
+    const far = getContactAssistWeight(0.3, 0.2, true);
+    const near = getContactAssistWeight(0.05, 0.08, true);
+    expect(near).toBeGreaterThan(far);
+    expect(far).toBeGreaterThan(0);
+  });
+
+  it("keeps touch assistance weaker than desktop assistance", () => {
+    expect(getContactAssistWeight(0, 0.01, true)).toBeLessThan(
+      getContactAssistWeight(0, 0.01, false),
+    );
   });
 });
