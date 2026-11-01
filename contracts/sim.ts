@@ -144,6 +144,7 @@ export class TableTennisSim {
     target.y=clamp(Number.isFinite(input.y)?input.y:1.16,0.84,1.7);
     target.z=clamp(Number.isFinite(input.z)?input.z:sign*1.48,sign>0?1.38:-1.75,sign>0?1.75:-1.38);
     target.power=false; target.slice=false; target.serve=Boolean(input.serve);
+    target.swingY=clamp(Number.isFinite(input.swingY) ? input.swingY as number : 0,-8,8);
   }
   getInput(side: Side): PaddleInput { return this.inputs[side]; }
 
