@@ -171,9 +171,7 @@ export class TableTennisAI {
       const tracking = clamp(dt * 60 * level.speed * (0.75 + anticipation), 0, 1);
       const targetX = clamp(intercept.x + this.shotOffset + error, -0.94, 0.94);
       const targetY = clamp(intercept.y + this.shotHeight, 0.84, 1.70);
-      // Drive the blade down through the ball at the last moment. The angled
-      // face then lifts a descending serve instead of returning it into the floor.
-      if (state.rallyHits === 1 && intercept.time < 0.14) this.input.swingY = -8;
+
       this.input.x += (targetX - this.input.x) * tracking;
       this.input.y += (targetY - this.input.y) * tracking;
       this.input.z = AI_RACKET_Z;
@@ -183,6 +181,9 @@ export class TableTennisAI {
       this.input.z = AI_RACKET_Z;
     }
 
+    // Keep this short downstroke active every frame, independently of the AI's
+    // decision throttle. It tilts the blade upward at impact and lifts the serve.
+    if (intercept && state.rallyHits === 1 && intercept.time < 0.06) this.input.swingY = -8;
     sim.setInput(1, this.input);
   }
 }
