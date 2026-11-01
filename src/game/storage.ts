@@ -42,3 +42,12 @@ export const trainingRecord = {
   },
   set: (value: number) => storage.set("spinRally.trainingBest", Math.max(0, Math.floor(value))),
 };
+
+
+export const accuracyRecord = {
+  get: () => {
+    const value = storage.get<unknown>("spinRally.accuracyBest", 0);
+    return typeof value === "number" && Number.isFinite(value) ? Math.max(0, Math.floor(value)) : 0;
+  },
+  set: (value: number) => storage.set("spinRally.accuracyBest", Math.max(0, Math.floor(value))),
+};
