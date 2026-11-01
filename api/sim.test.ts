@@ -273,6 +273,18 @@ describe("table tennis ball physics", () => {
     expect(Math.abs(paddle.vz)).toBeLessThanOrEqual(10.5);
   });
 
+  it("applies bounded vertical racket-drive input to the physical paddle", () => {
+    const sim = new TableTennisSim(43);
+    sim.startMatch();
+    sim.setInput(1, { ...DEFAULT_INPUT, z: -1.48, swingY: -8 });
+    sim.step(1 / 240);
+    expect(sim.state.paddles[1].vy).toBeCloseTo(-70 / 240, 5);
+    expect(sim.getInput(1).swingY).toBe(-8);
+
+    sim.setInput(1, { ...DEFAULT_INPUT, z: -1.48, swingY: -100 });
+    expect(sim.getInput(1).swingY).toBe(-8);
+  });
+
   it("fully resets paddles and queued inputs when a match is restarted", () => {
     const sim = new TableTennisSim(37);
     sim.startMatch();
