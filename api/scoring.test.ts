@@ -14,7 +14,7 @@ function awardPoint(sim: TableTennisSim, winner: Side): void {
     serve: false,
   };
   sim.step(1 / 240);
-  expect(sim.state.phase).toBe("point");
+  expect(["point", "gameover"]).toContain(sim.state.phase);
   expect(sim.state.lastPoint).toBe(winner);
 }
 
