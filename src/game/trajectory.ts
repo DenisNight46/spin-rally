@@ -21,11 +21,13 @@ export function predictRacketIntercept(
   side: Side,
   maxTime = 2,
   reachableOnly = false,
+  planeDistance = 1.48,
 ): RacketIntercept | null {
   const sign = side === 0 ? 1 : -1;
-  const planeZ = sign * 1.48;
+  const reachPlane = Math.max(0.72, Math.min(1.48, planeDistance));
+  const planeZ = sign * reachPlane;
   const ball = state.ball;
-  if (ball.v.z * sign <= 0.05 || ball.p.z * sign >= 1.48 || !Number.isFinite(maxTime) || maxTime <= 0) {
+  if (ball.v.z * sign <= 0.05 || ball.p.z * sign >= reachPlane || !Number.isFinite(maxTime) || maxTime <= 0) {
     return null;
   }
 
