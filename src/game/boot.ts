@@ -6,6 +6,7 @@ import { TableTennisAI, type Difficulty } from "./ai";
 import { NetworkClient } from "./network";
 import { storage, trainingRecord } from "./storage";
 import { getTrainingProgress } from "./training";
+import { predictRacketIntercept } from "./trajectory";
 import type { GameController, GameMode, GameUIState, NetworkStatus } from "./types";
 import type { ServerMessage } from "@contracts/network";
 import { DEFAULT_SETTINGS, TableTennisSim, type MatchState, type PaddleInput, type PlayerSettings, type Side } from "@contracts/sim";
@@ -21,45 +22,6 @@ declare global {
 
 let session: { dispose: () => void } | null = null;
 
-function predictRacketIntercept(state: MatchState, side: Side, maxTime = 0.38): { x: number; y: number; time: number } | null {
-  const sign = side === 0 ? 1 : -1;
-  let p = { ...state.ball.p };
-  let v = { ...state.ball.v };
-  const spin = { ...state.ball.spin };
-  const dt = 1 / 240;
-  let previousZ = p.z;
-  for (let i = 0; i < Math.ceil(maxTime / dt); i += 1) {
-    const speed = Math.hypot(v.x, v.y, v.z);
-    const drag = 0.045 * speed;
-    const magnus = {
-      x: spin.y * v.z - spin.z * v.y,
-      y: spin.z * v.x - spin.x * v.z,
-      z: spin.x * v.y - spin.y * v.x,
-    };
-    v = {
-      x: v.x + (-drag * v.x + 0.00030 * magnus.x) * dt,
-      y: v.y + (-9.81 - drag * v.y + 0.00030 * magnus.y) * dt,
-      z: v.z + (-drag * v.z + 0.00030 * magnus.z) * dt,
-    };
-    const previous = p;
-    p = { x: p.x + v.x * dt, y: p.y + v.y * dt, z: p.z + v.z * dt };
-    const damp = Math.max(0, 1 - 0.12 * dt);
-    spin.x *= damp; spin.y *= damp; spin.z *= damp;
-    const plane = sign * 1.48;
-    if ((sign > 0 && previousZ <= plane && p.z >= plane) || (sign < 0 && previousZ >= plane && p.z <= plane)) {
-      const fraction = Math.max(0, Math.min(1, (plane - previousZ) / (p.z - previousZ)));
-      const point = {
-        x: previous.x + (p.x - previous.x) * fraction,
-        y: previous.y + (p.y - previous.y) * fraction,
-        time: (i + fraction) * dt,
-      };
-      return point.y >= 0.84 && point.y <= 1.72 && Math.abs(point.x) <= 1.08 ? point : null;
-    }
-    previousZ = p.z;
-    if (p.y < 0.82 || Math.abs(p.x) > 1.2) return null;
-  }
-  return null;
-}
 
 function cleanSettings(value: PlayerSettings): PlayerSettings {
   const color = (input: unknown, fallback: string) => typeof input === "string" && /^#[0-9a-f]{6}$/i.test(input) ? input : fallback;
@@ -307,7 +269,7 @@ class SpinRallyGame {
     // racket plane and gently bias the target toward it. The player still
     // controls the racket; this only reduces frustrating near-misses.
     if (state.phase === "rally" && state.ball.v.z * sign > 0.15) {
-      const intercept = predictRacketIntercept(state, this.ownSide);
+      const intercept = predictRacketIntercept(state, this.ownSide, 0.38, true);
       if (intercept) {
         // Assistance must fade to zero for distant contacts. A negative
         // weight would actively push the racket away from the predicted ball.
