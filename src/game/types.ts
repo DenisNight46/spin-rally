@@ -1,7 +1,7 @@
 import type { Difficulty } from "./ai";
 import type { MatchState, PlayerSettings, Side } from "@contracts/sim";
 
-export type GameMode = "title" | "single" | "online";
+export type GameMode = "title" | "single" | "training" | "online";
 export type NetworkStatus = "offline" | "connecting" | "connected" | "disconnected";
 
 export interface GameUIState {
@@ -22,6 +22,7 @@ export interface GameUIState {
 
 export interface GameController {
   startSingle: (difficulty: Difficulty) => void;
+  startTraining: () => void;
   showTitle: () => void;
   togglePause: () => void;
   createRoom: () => void;
