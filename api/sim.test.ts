@@ -76,8 +76,8 @@ describe("AI trajectory prediction", () => {
       v: { x: 0.7, y: -0.3, z: -3.4 },
       spin: { x: 38, y: -24, z: 17 },
       lastHitter: 0,
-      bounces: 1,
-      firstBounce: 1,
+      bounces: 0,
+      firstBounce: null,
       serve: false,
     };
     sim.state.paddles[1].x = -0.9;
