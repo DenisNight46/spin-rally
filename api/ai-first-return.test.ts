@@ -20,12 +20,14 @@ describe("AI first-return regression", () => {
         sim.state.phase = "rally";
         sim.state.rallyHits = 1;
         sim.state.ball = {
-          p: { x: 0.08, y: 1.1, z: -0.88 },
-          v: { x: 0.18, y: 0.1, z: -3.2 },
+          // A legal serve has already bounced once on the server's half.
+          // The descending ball is now approaching its required receiver-side bounce.
+          p: { x: 0.08, y: 0.88, z: -0.88 },
+          v: { x: 0.18, y: -1.15, z: -3.2 },
           spin: { ...profile.spin },
           lastHitter: 0,
           bounces: 1,
-          firstBounce: 1,
+          firstBounce: 0,
           serve: true,
         };
 
