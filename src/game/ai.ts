@@ -81,7 +81,7 @@ export class TableTennisAI {
   private plannedRally = -1;
   private shotOffset = 0;
   private shotHeight = 0;
-  private input: PaddleInput = { ...DEFAULT_INPUT, z: AI_RACKET_Z, swingY: 0 };
+  private input: PaddleInput = { ...DEFAULT_INPUT, z: AI_RACKET_Z, swingY: 0, swingZ: 0 };
 
   constructor(private difficulty: Difficulty = "normal") {}
 
@@ -104,6 +104,7 @@ export class TableTennisAI {
     this.serveDelay += dt;
     this.input.serve = false;
     this.input.swingY = 0;
+    this.input.swingZ = 0;
     this.input.power = false;
     this.input.slice = false;
 
@@ -183,7 +184,10 @@ export class TableTennisAI {
 
     // Keep this short upward stroke active every frame, independently of the AI's
     // decision throttle. It tilts the blade upward at impact and lifts the serve.
-    if (intercept && state.rallyHits === 1 && intercept.time < 0.04) this.input.swingY = 8;
+    if (intercept && state.rallyHits === 1 && intercept.time < 0.04) {
+      this.input.swingY = 8;
+      this.input.swingZ = 8;
+    }
     sim.setInput(1, this.input);
   }
 }
