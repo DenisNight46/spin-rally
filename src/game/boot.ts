@@ -286,11 +286,19 @@ class SpinRallyGame {
     if (this.input.x !== 0) this.humanTarget.x += this.input.x * dt * 1.85 * orientation;
     if (this.input.y !== 0) this.humanTarget.y += this.input.y * dt * 1.45;
 
+    // Arcade reach: when the ball has crossed onto our half, let the racket
+    // move forward to meet short balls near the net instead of being trapped
+    // on the baseline. The player still controls lateral and vertical aim.
+    const ballDepth = state.ball.p.z * sign;
+    const reachPlane = state.phase === "rally" && state.ball.v.z * sign > 0.15 && ballDepth > 0
+      ? Math.max(0.72, Math.min(1.48, ballDepth + 0.48))
+      : 1.48;
+
     // Soft contact assistance works on mouse and touch. It only nudges a
     // nearby target toward a legal contact point; touch receives a lower cap
     // so the racket remains firmly under the player's finger.
     if (state.phase === "rally" && state.ball.v.z * sign > 0.15) {
-      const intercept = predictRacketIntercept(state, this.ownSide, 0.38, true);
+      const intercept = predictRacketIntercept(state, this.ownSide, 0.52, true, reachPlane);
       if (intercept) {
         const distance = Math.hypot(intercept.x - this.humanTarget.x, intercept.y - this.humanTarget.y);
         const assist = getContactAssistWeight(distance, intercept.time, this.input.pointerType === "touch");
@@ -301,8 +309,10 @@ class SpinRallyGame {
 
     this.humanTarget.x = Math.max(-0.98, Math.min(0.98, this.humanTarget.x));
     this.humanTarget.y = Math.max(0.84, Math.min(1.7, this.humanTarget.y));
-    // Keep the player at a fixed distance from the table. Only racket X/Y are controlled.
-    this.humanTarget.z = sign * 1.48;
+    // Depth is assisted automatically for short balls; normal rallies stay
+    // near the baseline. This is intentionally forgiving, not a third axis
+    // the player has to micromanage on a phone screen.
+    this.humanTarget.z = sign * reachPlane;
     this.servePulse = Math.max(0, this.servePulse - dt);
     return {
       x: this.humanTarget.x,
