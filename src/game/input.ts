@@ -61,8 +61,8 @@ export class Input {
       if (this.activePointer !== event.pointerId) return;
       this.activePointer = null;
       this.pointerActive = false;
-      this.pointerType = null;
       if (canceled) {
+        this.pointerStartFresh = false;
         this.pointerFresh = false;
         this.pointerPressed = false;
       }
