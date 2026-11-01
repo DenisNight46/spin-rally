@@ -1,0 +1,85 @@
+import {
+  applyTableBouncePhysics,
+  integrateBallFlight,
+  TABLE,
+  type MatchState,
+  type Side,
+} from "@contracts/sim";
+
+export interface RacketIntercept {
+  x: number;
+  y: number;
+  time: number;
+}
+
+/**
+ * Predict a legal ball crossing at either player's racket plane.
+ * Flight and table contact use the same deterministic physics as the server.
+ */
+export function predictRacketIntercept(
+  state: MatchState,
+  side: Side,
+  maxTime = 2,
+  reachableOnly = false,
+): RacketIntercept | null {
+  const sign = side === 0 ? 1 : -1;
+  const planeZ = sign * 1.48;
+  const ball = state.ball;
+  if (ball.v.z * sign <= 0.05 || ball.p.z * sign >= 1.48 || !Number.isFinite(maxTime) || maxTime <= 0) {
+    return null;
+  }
+
+  let p = { ...ball.p };
+  let v = { ...ball.v };
+  let spin = { ...ball.spin };
+  let predictedBounces = ball.bounces;
+  const isServe = ball.serve;
+  const dt = 1 / 240;
+  const tableTop = TABLE.y + TABLE.ballRadius;
+
+  for (let i = 0; i < Math.ceil(maxTime / dt); i += 1) {
+    const previous = { ...p };
+    const predictedBall = { p, v, spin, serve: isServe };
+    integrateBallFlight(predictedBall, dt);
+    p = predictedBall.p;
+    v = predictedBall.v;
+    spin = predictedBall.spin;
+
+    if (
+      previous.y >= tableTop &&
+      p.y <= tableTop &&
+      v.y < 0 &&
+      Math.abs(p.x) <= TABLE.width / 2 &&
+      Math.abs(p.z) <= TABLE.length / 2
+    ) {
+      const fraction = Math.max(0, Math.min(1, (previous.y - tableTop) / Math.max(1e-7, previous.y - p.y)));
+      p.x = previous.x + (p.x - previous.x) * fraction;
+      p.z = previous.z + (p.z - previous.z) * fraction;
+      p.y = tableTop;
+      applyTableBouncePhysics({ p, v, spin, serve: isServe }, predictedBounces + 1);
+      predictedBounces += 1;
+    }
+
+    const crossed = sign > 0
+      ? previous.z < planeZ && p.z >= planeZ
+      : previous.z > planeZ && p.z <= planeZ;
+    if (crossed) {
+      const requiredBounces = isServe ? 2 : 1;
+      if (predictedBounces < requiredBounces) return null;
+      const fraction = Math.max(0, Math.min(1, (planeZ - previous.z) / (p.z - previous.z)));
+      const intercept = {
+        x: previous.x + (p.x - previous.x) * fraction,
+        y: previous.y + (p.y - previous.y) * fraction,
+        time: (i + fraction) * dt,
+      };
+      if (reachableOnly && (intercept.y < 0.84 || intercept.y > 1.72 || Math.abs(intercept.x) > 1.08)) {
+        return null;
+      }
+      return intercept;
+    }
+
+    if (p.y < TABLE.y - 0.1 || Math.abs(p.x) > 1.6 || Math.abs(p.z) > 2.1) return null;
+  }
+
+  return null;
+}
