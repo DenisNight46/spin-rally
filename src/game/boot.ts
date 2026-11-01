@@ -57,6 +57,7 @@ class SpinRallyGame {
   private sendClock = 0;
   private servePulse = 0;
   private humanTarget = { x: 0, y: 1.17, z: 1.48 };
+  private touchDragAnchor: { x: number; y: number } | null = null;
   private renderLast = performance.now();
   private disposed = false;
   private trainingBest = trainingRecord.get();
@@ -123,6 +124,7 @@ class SpinRallyGame {
     this.paused = false;
     this.players = [this.settings, { ...DEFAULT_SETTINGS, name: difficulty === "easy" ? "Робот · Новичок" : difficulty === "hard" ? "Робот · Профи" : "Робот · Любитель", kit: "#ef6a67", paddle: "#26313d" }];
     this.humanTarget = { x: 0, y: 1.17, z: 1.48 };
+    this.touchDragAnchor = null;
     this.lastEvent = 0;
     this.sim.startMatch();
     this.scene.setTitleMode(false);
@@ -254,12 +256,28 @@ class SpinRallyGame {
     const state = this.currentState();
     const sign = this.ownSide === 0 ? 1 : -1;
     const orientation = this.ownSide === 0 ? 1 : -1;
-    if (this.input.pointerFresh) {
+    // Touch uses relative dragging: the racket starts where it already is and
+    // follows the finger's movement. Mouse keeps absolute desktop positioning.
+    if (this.input.pointerType === "touch") {
+      if (!this.input.pointerActive) this.touchDragAnchor = null;
+      if (this.input.consumePointerStart()) {
+        this.touchDragAnchor = this.scene.pointerToRacket(this.input.pointerX, this.input.pointerY, this.ownSide);
+      } else if (this.input.pointerFresh) {
+        const projected = this.scene.pointerToRacket(this.input.pointerX, this.input.pointerY, this.ownSide);
+        if (projected && this.touchDragAnchor) {
+          this.humanTarget.x += projected.x - this.touchDragAnchor.x;
+          this.humanTarget.y += projected.y - this.touchDragAnchor.y;
+        }
+        this.touchDragAnchor = projected;
+      }
+      this.input.pointerFresh = false;
+    } else if (this.input.pointerFresh) {
       const projected = this.scene.pointerToRacket(this.input.pointerX, this.input.pointerY, this.ownSide);
       if (projected) {
         this.humanTarget.x = projected.x;
         this.humanTarget.y = projected.y;
       }
+      this.touchDragAnchor = null;
       this.input.pointerFresh = false;
     }
     if (this.input.x !== 0) this.humanTarget.x += this.input.x * dt * 1.85 * orientation;
@@ -268,12 +286,12 @@ class SpinRallyGame {
     // Soft contact assistance: predict the incoming ball at the player's
     // racket plane and gently bias the target toward it. The player still
     // controls the racket; this only reduces frustrating near-misses.
-    if (state.phase === "rally" && state.ball.v.z * sign > 0.15) {
+    if (state.phase === "rally" && state.ball.v.z * sign > 0.15 && !(this.input.pointerType === "touch" && this.input.pointerActive)) {
       const intercept = predictRacketIntercept(state, this.ownSide, 0.38, true);
       if (intercept) {
         // Assistance must fade to zero for distant contacts. A negative
         // weight would actively push the racket away from the predicted ball.
-        const assist = Math.max(0, Math.min(0.42, 0.42 * (1 - intercept.time / 0.38)));
+        const assist = Math.max(0, Math.min(0.24, 0.24 * (1 - intercept.time / 0.38)));
         this.humanTarget.x += (intercept.x - this.humanTarget.x) * assist;
         this.humanTarget.y += (intercept.y - this.humanTarget.y) * assist;
       }
