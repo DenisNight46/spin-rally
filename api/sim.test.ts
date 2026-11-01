@@ -281,10 +281,12 @@ describe("table tennis ball physics", () => {
     expect(sim.state.paddles[1].vy).toBeCloseTo(-70 / 240, 5);
     expect(sim.getInput(1).swingY).toBe(-8);
 
-    sim.setInput(1, { ...DEFAULT_INPUT, z: -1.48, swingY: -100 });
+    sim.setInput(1, { ...DEFAULT_INPUT, z: -1.48, swingY: -100, swingZ: 8 });
     expect(sim.getInput(1).swingY).toBe(-8);
+    expect(sim.getInput(1).swingZ).toBe(8);
+    expect(sim.state.paddles[1].vz).toBeGreaterThan(0);
 
-    sim.setInput(1, { ...DEFAULT_INPUT, z: -1.48, y: 0.7, swingY: 0 });
+    sim.setInput(1, { ...DEFAULT_INPUT, z: -1.48, y: 0.7, swingY: 0, swingZ: 0 });
     expect(sim.getInput(1).y).toBe(0.7);
     sim.setInput(0, { ...DEFAULT_INPUT, y: 0.7 });
     expect(sim.getInput(0).y).toBe(0.84);
