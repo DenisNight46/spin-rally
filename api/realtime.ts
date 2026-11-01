@@ -154,12 +154,12 @@ export function attachRealtime(server: HttpServer): void {
       }
       const message = parsed as ClientMessage;
       if (message.type === "create") {
-        if (socket.room) leave(socket);
-        const id = makeCode();
         if (rooms.size >= 250) {
           send(socket, { type: "error", message: "Сервер занят. Попробуйте позже" });
           return;
         }
+        if (socket.room) leave(socket);
+        const id = makeCode();
         const settings = cleanSettings(message.settings);
         const now = performance.now();
         const room: Room = { id, players: [null, null], sim: new TableTennisSim(randomInt(1, 2 ** 30)), tick: 0, accumulator: 0, lastTickAt: now, lastActivityAt: Date.now(), rematchVotes: new Set() };
@@ -173,10 +173,19 @@ export function attachRealtime(server: HttpServer): void {
         return;
       }
       if (message.type === "join") {
-        if (socket.room) leave(socket);
-        const room = rooms.get(String(message.roomId).toUpperCase());
+        const room = rooms.get(typeof message.roomId === "string" ? message.roomId.toUpperCase() : "");
         if (!room) {
           send(socket, { type: "error", message: "Комната не найдена. Проверьте код" });
+          return;
+        }
+        // Repeating join for the same socket is idempotent: do not reset the
+        // match or evict the player from their own room.
+        const currentSide = room.players.findIndex((player) => player?.socket === socket);
+        if (currentSide >= 0) {
+          socket.room = room;
+          socket.side = currentSide as Side;
+          send(socket, { type: "joined", roomId: room.id, side: socket.side });
+          broadcastState(room);
           return;
         }
         const side: Side | null = !room.players[0] ? 0 : !room.players[1] ? 1 : null;
@@ -184,6 +193,9 @@ export function attachRealtime(server: HttpServer): void {
           send(socket, { type: "error", message: "В комнате уже два игрока" });
           return;
         }
+        // Validate the destination before leaving the current room. A typo or
+        // full destination must never disconnect an otherwise active match.
+        if (socket.room) leave(socket);
         const settings = cleanSettings(message.settings);
         room.players[side] = { socket, settings };
         room.lastActivityAt = Date.now();
