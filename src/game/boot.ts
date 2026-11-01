@@ -4,8 +4,8 @@ import { AudioSystem } from "./audio";
 import { SceneView } from "./scene";
 import { TableTennisAI, type Difficulty } from "./ai";
 import { NetworkClient } from "./network";
-import { storage, trainingRecord } from "./storage";
-import { getTrainingProgress } from "./training";
+import { accuracyRecord, storage, trainingRecord } from "./storage";
+import { getTrainingProgress, isAccuracyTargetHit } from "./training";
 import { getContactAssistWeight, predictRacketIntercept } from "./trajectory";
 import type { GameController, GameMode, GameUIState, NetworkStatus } from "./types";
 import type { ServerMessage } from "@contracts/network";
@@ -61,6 +61,9 @@ class SpinRallyGame {
   private renderLast = performance.now();
   private disposed = false;
   private trainingBest = trainingRecord.get();
+  private accuracyScore = 0;
+  private accuracyBest = accuracyRecord.get();
+  private lastAccuracyEvent = 0;
 
   constructor(private canvas: HTMLCanvasElement, private onUI: (state: GameUIState) => void) {
     this.scene = new SceneView(canvas);
@@ -98,6 +101,7 @@ class SpinRallyGame {
     return {
       startSingle: (difficulty) => this.startSingle(difficulty),
       startTraining: () => this.startTraining(),
+      startAccuracy: () => this.startAccuracy(),
       showTitle: () => this.showTitle(),
       togglePause: () => this.togglePause(),
       createRoom: () => this.openRoom("create"),
@@ -117,6 +121,7 @@ class SpinRallyGame {
     this.closeNetwork();
     this.difficulty = difficulty;
     this.ai = new TableTennisAI(difficulty);
+    this.scene.setAccuracyMode(false);
     this.sim = new TableTennisSim(this.seed());
     this.ai.reset();
     this.mode = "single";
@@ -132,9 +137,9 @@ class SpinRallyGame {
     this.notify();
   }
 
-  private startTraining(): void {
+  private startAccuracy(): void {\n    this.startSingle("easy");\n    this.mode = "accuracy";\n    this.accuracyScore = 0;\n    this.lastAccuracyEvent = this.sim.state.eventId;\n    this.scene.setAccuracyMode(true);\n    this.sim.state.message = "Попади в светящуюся зону на дальней половине стола";\n    this.notify();\n  }\n\n  private startTraining(): void {
     this.startSingle("easy");
-    this.mode = "training";
+    this.mode = "training";\n    this.scene.setAccuracyMode(false);
     this.players[1] = { ...this.players[1], name: "Тренировочный робот" };
     this.sim.state.message = "Цель: продержи мяч в игре 10 ударов подряд";
     this.notify();
@@ -142,7 +147,7 @@ class SpinRallyGame {
 
   private showTitle(): void {
     this.closeNetwork();
-    this.mode = "title";
+    this.mode = "title";\n    this.scene.setAccuracyMode(false);
     this.paused = false;
     this.netState = null;
     this.roomId = "";
@@ -339,7 +344,7 @@ class SpinRallyGame {
     }
     if (this.paused) return;
     const human = this.humanInput(dt);
-    if (this.mode === "single" || this.mode === "training") {
+    if (this.mode === "single" || this.mode === "training" || this.mode === "accuracy") {
       this.sim.setInput(0, human);
       this.ai.update(this.sim, dt);
       this.sim.step(1 / 120);
@@ -360,7 +365,7 @@ class SpinRallyGame {
     }
   }
 
-  private processEvent(state: MatchState): void {
+  private trackAccuracyEvent(): void {\n    if (this.mode !== "accuracy") return;\n    const event = this.sim.state.event;\n    if (!event || event.type !== "bounce" || event.eventId === this.lastAccuracyEvent) return;\n    this.lastAccuracyEvent = this.sim.state.eventId;\n    if (event.side !== 0 || !event.p || event.p.z >= 0) return;\n    if (isAccuracyTargetHit(event.p)) {\n      this.accuracyScore += 1;\n      if (this.accuracyScore > this.accuracyBest) {\n        this.accuracyBest = this.accuracyScore;\n        accuracyRecord.set(this.accuracyBest);\n      }\n      this.sim.state.message = "Точно в цель! Отличный удар";\n    } else {\n      this.sim.state.message = "Мимо цели — меняй направление удара";\n    }\n  }\n\n  private processEvent(state: MatchState): void {
     if (!state.event || state.eventId === this.lastEvent) return;
     this.lastEvent = state.eventId;
     this.scene.handleEvent(state.event, state.eventId);
@@ -409,7 +414,7 @@ class SpinRallyGame {
       ping: this.network?.ping ?? 0,
       paused: this.paused,
       muted: this.audio.muted,
-      trainingBest: this.trainingBest,
+      trainingBest: this.trainingBest,\n      accuracyScore: this.accuracyScore,\n      accuracyBest: this.accuracyBest,
     });
   }
 
