@@ -17,7 +17,7 @@ const cross = (a: Vec3, b: Vec3): Vec3 => ({
   z: a.x * b.y - a.y * b.x,
 });
 
-function predictIntercept(sim: TableTennisSim): { x: number; y: number; time: number } | null {
+export function predictAIIntercept(sim: TableTennisSim): { x: number; y: number; time: number } | null {
   const ball = sim.state.ball;
   const planeZ = AI_RACKET_Z;
   if (ball.v.z >= -0.05 || ball.p.z <= planeZ) return null;
@@ -167,7 +167,7 @@ export class TableTennisAI {
       return;
     }
 
-    const intercept = predictIntercept(sim);
+    const intercept = predictAIIntercept(sim);
     if (intercept && this.think <= 0) {
       this.think = level.reaction;
       // Choose one shot plan per incoming ball. The target is deliberately
