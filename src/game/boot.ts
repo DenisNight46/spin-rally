@@ -132,6 +132,7 @@ class SpinRallyGame {
   controller(): GameController {
     return {
       startSingle: (difficulty) => this.startSingle(difficulty),
+      startTraining: () => this.startTraining(),
       showTitle: () => this.showTitle(),
       togglePause: () => this.togglePause(),
       createRoom: () => this.openRoom("create"),
@@ -162,6 +163,14 @@ class SpinRallyGame {
     this.sim.startMatch();
     this.scene.setTitleMode(false);
     this.audio.startMusic();
+    this.notify();
+  }
+
+  private startTraining(): void {
+    this.startSingle("easy");
+    this.mode = "training";
+    this.players[1] = { ...this.players[1], name: "Тренировочный робот" };
+    this.sim.state.message = "Цель: продержи мяч в игре 10 ударов подряд";
     this.notify();
   }
 
@@ -336,7 +345,7 @@ class SpinRallyGame {
     }
     if (this.paused) return;
     const human = this.humanInput(dt);
-    if (this.mode === "single") {
+    if (this.mode === "single" || this.mode === "training") {
       this.sim.setInput(0, human);
       this.ai.update(this.sim, dt);
       this.sim.step(1 / 120);
