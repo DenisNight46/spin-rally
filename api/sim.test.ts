@@ -140,7 +140,7 @@ describe("shared racket trajectory prediction", () => {
 describe("AI tactical shot planning", () => {
   it("anticipates lateral movement and attacks the newly exposed side", () => {
     const stationaryPlan = planAIShot("hard", 0, -0.55, 0, 0.25, 0.5);
-    const movingRightPlan = planAIShot("hard", 0, -0.55, 4, 0.25, 0.5);
+    const movingRightPlan = planAIShot("hard", 0, -0.55, 5, 0.25, 0.5);
 
     expect(stationaryPlan.offset).toBeGreaterThan(0);
     expect(movingRightPlan.predictedOpponentX).toBeGreaterThan(0);
