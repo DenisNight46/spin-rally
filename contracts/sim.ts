@@ -294,6 +294,10 @@ export class TableTennisSim {
     const j=length(impulse),maxJ=PADDLE_FRICTION*normalImpulse;
     if(j>maxJ&&j>0){const scale=maxJ/j;impulse={x:impulse.x*scale,y:impulse.y*scale,z:impulse.z*scale};}
     b.v.x+=impulse.x/BALL_MASS;b.v.y+=impulse.y/BALL_MASS;b.v.z+=impulse.z/BALL_MASS;
+    // Vertical racket-head motion transfers lift directly to the ball. The
+    // friction impulse still generates spin; this term prevents a descending
+    // contact from being returned flat into the floor.
+    b.v.y += clamp(p.vy * 0.8, -3, 3);
     const angular=cross(arm,impulse);
     b.spin.x+=angular.x/BALL_INERTIA;b.spin.y+=angular.y/BALL_INERTIA;b.spin.z+=angular.z/BALL_INERTIA;
     // Small torsional damping models the rubber/ball contact patch.
