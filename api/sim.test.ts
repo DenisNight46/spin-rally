@@ -175,6 +175,14 @@ describe("AI tactical shot planning", () => {
     expect(expertCounter.height).toBeLessThan(0);
   });
 
+  it("uses a safe lifting stroke for the first return after a serve on every difficulty", () => {
+    for (const difficulty of ["easy", "normal", "hard"] as const) {
+      const plan = planAIShot(difficulty, 1, 0, 0, 0.25, 0.5, 0);
+      expect(plan.brush).toBe("down");
+      expect(plan.height).toBeLessThan(-0.07);
+    }
+  });
+
   it("bounds opponent anticipation to the legal lateral range", () => {
     const plan = planAIShot("hard", 4, 0.9, 100, 0.5, 1);
     expect(plan.predictedOpponentX).toBe(0.98);
