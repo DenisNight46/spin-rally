@@ -23,11 +23,23 @@ interface Room {
   tick: number;
   accumulator: number;
   lastTickAt: number;
+  lastActivityAt: number;
   rematchVotes: Set<Side>;
 }
 
 const rooms = new Map<string, Room>();
 const CODE_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+
+const ROOM_IDLE_TIMEOUT_MS = 15 * 60 * 1000;
+
+/** A one-player lobby expires only after its connected client stops sending activity. */
+export function isWaitingRoomExpired(
+  connectedPlayers: number,
+  lastActivityAt: number,
+  now: number,
+): boolean {
+  return connectedPlayers < 2 && now - lastActivityAt >= ROOM_IDLE_TIMEOUT_MS;
+}
 
 function makeCode(): string {
   let code = "";
@@ -142,7 +154,7 @@ export function attachRealtime(server: HttpServer): void {
         }
         const settings = cleanSettings(message.settings);
         const now = performance.now();
-        const room: Room = { id, players: [null, null], sim: new TableTennisSim(randomInt(1, 2 ** 30)), tick: 0, accumulator: 0, lastTickAt: now, rematchVotes: new Set() };
+        const room: Room = { id, players: [null, null], sim: new TableTennisSim(randomInt(1, 2 ** 30)), tick: 0, accumulator: 0, lastTickAt: now, lastActivityAt: now, rematchVotes: new Set() };
         room.players[0] = { socket, settings };
         rooms.set(id, room);
         socket.room = room;
@@ -166,6 +178,7 @@ export function attachRealtime(server: HttpServer): void {
         }
         const settings = cleanSettings(message.settings);
         room.players[side] = { socket, settings };
+        room.lastActivityAt = Date.now();
         socket.room = room;
         socket.side = side;
         socket.settings = settings;
@@ -179,6 +192,7 @@ export function attachRealtime(server: HttpServer): void {
         // Cap per-client input to a sensible 100 Hz; clients normally send 30 Hz.
         if (socket.room && socket.side !== undefined && isValidPaddleInput(message.input) && now - (socket.lastInputAt ?? 0) >= 10) {
           socket.lastInputAt = now;
+          socket.room.lastActivityAt = now;
           socket.room.sim.setInput(socket.side, message.input);
         }
         return;
@@ -197,7 +211,10 @@ export function attachRealtime(server: HttpServer): void {
         }
         return;
       }
-      if (message.type === "ping") send(socket, { type: "pong", at: Number(message.at) || 0 });
+      if (message.type === "ping") {
+        if (socket.room) socket.room.lastActivityAt = Date.now();
+        send(socket, { type: "pong", at: Number(message.at) || 0 });
+      }
     });
     socket.on("close", () => leave(socket));
     socket.on("error", () => leave(socket));
@@ -206,6 +223,18 @@ export function attachRealtime(server: HttpServer): void {
   const timer = setInterval(() => {
     const now = performance.now();
     for (const room of rooms.values()) {
+      const connectedPlayers = Number(Boolean(room.players[0])) + Number(Boolean(room.players[1]));
+      if (isWaitingRoomExpired(connectedPlayers, room.lastActivityAt, Date.now())) {
+        for (const player of room.players) {
+          if (player) {
+            send(player.socket, { type: "error", message: "Комната закрыта из-за длительного бездействия" });
+            player.socket.room = undefined;
+            player.socket.side = undefined;
+          }
+        }
+        rooms.delete(room.id);
+        continue;
+      }
       if (!room.players[0] || !room.players[1]) {
         room.lastTickAt = now;
         room.accumulator = 0;
