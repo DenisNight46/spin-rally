@@ -34,3 +34,11 @@ export const highScore = {
   get: () => storage.get<number>("highScore", 0),
   set: (v: number) => storage.set("highScore", v),
 };
+
+export const trainingRecord = {
+  get: () => {
+    const value = storage.get<unknown>("spinRally.trainingBest", 0);
+    return typeof value === "number" && Number.isFinite(value) ? Math.max(0, Math.floor(value)) : 0;
+  },
+  set: (value: number) => storage.set("spinRally.trainingBest", Math.max(0, Math.floor(value))),
+};
