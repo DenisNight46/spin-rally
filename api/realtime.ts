@@ -154,7 +154,7 @@ export function attachRealtime(server: HttpServer): void {
         }
         const settings = cleanSettings(message.settings);
         const now = performance.now();
-        const room: Room = { id, players: [null, null], sim: new TableTennisSim(randomInt(1, 2 ** 30)), tick: 0, accumulator: 0, lastTickAt: now, lastActivityAt: now, rematchVotes: new Set() };
+        const room: Room = { id, players: [null, null], sim: new TableTennisSim(randomInt(1, 2 ** 30)), tick: 0, accumulator: 0, lastTickAt: now, lastActivityAt: Date.now(), rematchVotes: new Set() };
         room.players[0] = { socket, settings };
         rooms.set(id, room);
         socket.room = room;
