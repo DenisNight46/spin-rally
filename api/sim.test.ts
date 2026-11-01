@@ -474,6 +474,39 @@ describe("table tennis ball physics", () => {
     }
   });
 
+  it.each(["easy", "normal", "hard"] as const)("serves legally from the AI side on %s difficulty", (difficulty) => {
+    for (let seed = 1; seed <= 4; seed += 1) {
+      const sim = new TableTennisSim(seed * 29);
+      const ai = new TableTennisAI(difficulty);
+      sim.startMatch();
+      sim.state.server = 1;
+      sim.state.phase = "serve";
+      sim.state.ball.lastHitter = 1;
+      sim.state.ball.serve = true;
+      sim.state.ball.bounces = 0;
+      sim.state.ball.firstBounce = null;
+      const bounceSides: number[] = [];
+      let lastEvent = sim.state.eventId;
+
+      for (let frame = 0; frame < 1200 && bounceSides.length < 2 && sim.state.phase === "serve" || frame < 1200 && bounceSides.length < 2 && sim.state.phase === "rally"; frame += 1) {
+        ai.update(sim, 1 / 60);
+        sim.step(1 / 120);
+        if (sim.state.eventId !== lastEvent) {
+          lastEvent = sim.state.eventId;
+          if (sim.state.event?.type === "bounce" && sim.state.event.p) bounceSides.push(sim.state.event.p.z >= 0 ? 0 : 1);
+        }
+        sim.step(1 / 120);
+        if (sim.state.eventId !== lastEvent) {
+          lastEvent = sim.state.eventId;
+          if (sim.state.event?.type === "bounce" && sim.state.event.p) bounceSides.push(sim.state.event.p.z >= 0 ? 0 : 1);
+        }
+      }
+
+      expect(bounceSides, `${difficulty} AI serve bounce order at seed ${seed}; phase=${sim.state.phase}, message=${sim.state.message}`).toEqual([1, 0]);
+      expect(sim.state.phase).toBe("rally");
+    }
+  });
+
   it("gives each AI difficulty a distinct rally-placement strategy", () => {
     const makeReturn = (difficulty: "easy" | "normal" | "hard", rallyHits: number, opponentX: number) => {
       const sim = new TableTennisSim(31);
