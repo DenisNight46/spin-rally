@@ -181,7 +181,7 @@ export class TableTennisAI {
       this.input.z = AI_RACKET_Z;
     }
 
-    // Keep this short downstroke active every frame, independently of the AI's
+    // Keep this short upward stroke active every frame, independently of the AI's
     // decision throttle. It tilts the blade upward at impact and lifts the serve.
     if (intercept && state.rallyHits === 1 && intercept.time < 0.04) this.input.swingY = 8;
     sim.setInput(1, this.input);
