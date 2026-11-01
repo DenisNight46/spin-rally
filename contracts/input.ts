@@ -22,6 +22,7 @@ export function normalizePointerPosition(
     || rect.width <= 0 || rect.height <= 0) return null;
   return {
     x: Math.max(-1, Math.min(1, ((clientX - rect.left) / rect.width) * 2 - 1)),
-    y: Math.max(-1, Math.min(1, ((clientY - rect.top) / rect.height) * 2 - 1)),
+    // Three.js NDC uses +1 at the top and -1 at the bottom.
+    y: Math.max(-1, Math.min(1, 1 - ((clientY - rect.top) / rect.height) * 2)),
   };
 }
