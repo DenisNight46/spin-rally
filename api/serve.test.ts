@@ -50,8 +50,9 @@ describe("table-tennis service rotation", () => {
     advanceToNextServe(sim);
     expect(sim.state.server).toBe(1);
 
-    awardPoint(sim, 0);
+    awardPoint(sim, 1);
     advanceToNextServe(sim);
+    expect(sim.state.scores).toEqual([11, 11]);
     expect(sim.state.server).toBe(0);
   });
 
