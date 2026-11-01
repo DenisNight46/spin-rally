@@ -18,6 +18,7 @@ export interface GameUIState {
   ping: number;
   paused: boolean;
   muted: boolean;
+  trainingBest: number;
 }
 
 export interface GameController {
