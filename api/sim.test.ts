@@ -187,6 +187,38 @@ describe("table tennis ball physics", () => {
     expect(hit, `AI return diagnostics:\n${JSON.stringify({ finalPhase: sim.state.phase, finalMessage: sim.state.message, finalBall: sim.state.ball, trace }, null, 2)}`).toBe(true);
   });
 
+  it("gives each AI difficulty a distinct rally-placement strategy", () => {
+    const makeReturn = (difficulty: "easy" | "normal" | "hard", rallyHits: number, opponentX: number) => {
+      const sim = new TableTennisSim(31);
+      sim.startMatch();
+      sim.state.phase = "rally";
+      sim.state.rallyHits = rallyHits;
+      sim.state.paddles[0].x = opponentX;
+      sim.state.ball = {
+        p: { x: 0, y: 1.2, z: -1.2 },
+        v: { x: 0, y: 0, z: -5 },
+        spin: { x: 0, y: 0, z: 0 },
+        lastHitter: 0,
+        bounces: 1,
+        firstBounce: 0,
+        serve: false,
+      };
+      const ai = new TableTennisAI(difficulty);
+      ai.update(sim, 1 / 60);
+      return sim.getInput(1).x;
+    };
+
+    const beginner = makeReturn("easy", 0, 0.55);
+    const clubLeft = makeReturn("normal", 0, 0.55);
+    const clubRight = makeReturn("normal", 1, 0.55);
+    const expert = makeReturn("hard", 0, 0.55);
+
+    expect(Math.abs(beginner)).toBeLessThan(0.01);
+    expect(clubLeft).toBeGreaterThan(0);
+    expect(clubRight).toBeLessThan(0);
+    expect(expert).toBeLessThan(clubLeft - 0.02);
+  });
+
   it("varies AI service placement across the legal table width", () => {
     const sim = new TableTennisSim(19);
     const ai = new TableTennisAI("hard");
