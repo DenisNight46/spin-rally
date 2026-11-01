@@ -120,13 +120,14 @@ export class NetworkClient {
       }
     });
 
-    socket.addEventListener("close", () => {
+    socket.addEventListener("close", (event) => {
       if (this.socket !== socket) return;
       window.clearInterval(this.pingTimer);
       window.clearTimeout(this.connectTimer);
       this.pingTimer = 0;
       this.connectTimer = 0;
       this.onStatus("disconnected");
+      if (event.code === 4002) this.sessionToken = "";
       if (this.sessionToken && !this.disposed) this.scheduleReconnect();
     });
     socket.addEventListener("error", () => {
