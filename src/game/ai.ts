@@ -190,8 +190,8 @@ export class TableTennisAI {
       // A serve has already bounced on the receiver's half. Use a compact
       // lift rather than a full-power stroke: the latter launches the return
       // too high and sends it beyond the far end of the table.
-      this.input.swingY = 2;
-      this.input.swingZ = 4;
+      this.input.swingY = 1.2;
+      this.input.swingZ = 1.5;
     } else if (intercept && state.rallyHits > 1 && intercept.time < 0.14) {
       // Later returns use a softer planned arc that clears the net and lands
       // around the middle of the opponent's half instead of flying long.
