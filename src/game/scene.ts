@@ -51,6 +51,7 @@ export class SceneView {
   private ballFlash = 0;
   private ballFlashColor = new THREE.Color("#ffffff");
   private titleMode = true;
+  private accuracyTarget: THREE.Mesh | null = null;
 
   constructor(canvas: HTMLCanvasElement) {
     this.renderer = new THREE.WebGLRenderer({ canvas, antialias: true, preserveDrawingBuffer: true, powerPreference: "high-performance" });
@@ -175,6 +176,12 @@ export class SceneView {
     top.castShadow = true;
     top.receiveShadow = true;
     this.scene.add(top);
+    const accuracyTargetMaterial = new THREE.MeshBasicMaterial({ color: "#42f0c1", transparent: true, opacity: 0.82, side: THREE.DoubleSide, depthWrite: false });
+    this.accuracyTarget = new THREE.Mesh(new THREE.TorusGeometry(0.22, 0.018, 8, 48), accuracyTargetMaterial);
+    this.accuracyTarget.rotation.x = Math.PI / 2;
+    this.accuracyTarget.position.set(0, TABLE.y + 0.008, -0.94);
+    this.accuracyTarget.visible = false;
+    this.scene.add(this.accuracyTarget);
     const lineY = TABLE.y + 0.002;
     const addLine = (w: number, d: number, x: number, z: number) => {
       const line = new THREE.Mesh(new THREE.BoxGeometry(w, 0.003, d), edgeMat);
