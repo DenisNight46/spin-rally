@@ -774,3 +774,19 @@ describe("near-miss contact assistance", () => {
     expect(touch).toBeGreaterThan(0.3);
   });
 });
+
+
+describe("precision challenge target", () => {
+  it("scores only landings inside the marked target radius", async () => {
+    const { isAccuracyTargetHit } = await import("../src/game/training");
+    expect(isAccuracyTargetHit({ x: 0, z: -0.94 })).toBe(true);
+    expect(isAccuracyTargetHit({ x: 0.2, z: -0.94 })).toBe(true);
+    expect(isAccuracyTargetHit({ x: 0.3, z: -0.94 })).toBe(false);
+    expect(isAccuracyTargetHit({ x: 0, z: 0.94 })).toBe(false);
+  });
+  it("rejects missing and non-finite landing coordinates", async () => {
+    const { isAccuracyTargetHit } = await import("../src/game/training");
+    expect(isAccuracyTargetHit(undefined)).toBe(false);
+    expect(isAccuracyTargetHit({ x: Number.NaN, z: -0.94 })).toBe(false);
+  });
+});
