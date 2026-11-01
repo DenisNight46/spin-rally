@@ -382,6 +382,10 @@ export class SceneView {
     this.titleMode = value;
   }
 
+  setAccuracyMode(value: boolean): void {
+    if (this.accuracyTarget) this.accuracyTarget.visible = value;
+  }
+
   update(state: MatchState, ownSide: Side, settings: [PlayerSettings, PlayerSettings], dt: number, networked = false): void {
     this.elapsed += dt;
     this.ownSide = ownSide;
