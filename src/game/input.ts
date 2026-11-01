@@ -13,6 +13,9 @@ export class Input {
   pointerX = 0;
   pointerY = 0;
   pointerFresh = false;
+  pointerType: string | null = null;
+  pointerActive = false;
+  private pointerStartFresh = false;
   private pointerPressed = false;
   readonly actions = new Set<string>();
   private held = new Set<string>();
@@ -44,6 +47,9 @@ export class Input {
       // teleport it or accidentally trigger a serve.
       if (event.button !== 0 || !event.isPrimary || (this.activePointer !== null && this.activePointer !== event.pointerId)) return;
       this.activePointer = event.pointerId;
+      this.pointerActive = true;
+      this.pointerType = event.pointerType;
+      this.pointerStartFresh = true;
       this.pointerPressed = true;
       canvas.setPointerCapture?.(event.pointerId);
       this.updatePointer(event);
@@ -54,6 +60,8 @@ export class Input {
     const release = (event: PointerEvent, canceled = false) => {
       if (this.activePointer !== event.pointerId) return;
       this.activePointer = null;
+      this.pointerActive = false;
+      this.pointerType = null;
       if (canceled) {
         this.pointerFresh = false;
         this.pointerPressed = false;
@@ -70,6 +78,7 @@ export class Input {
     if (!point) return;
     this.pointerX = point.x;
     this.pointerY = point.y;
+    this.pointerType = event.pointerType;
     this.pointerFresh = true;
   }
 
@@ -105,6 +114,12 @@ export class Input {
     return pressed;
   }
 
+  consumePointerStart(): boolean {
+    const started = this.pointerStartFresh;
+    this.pointerStartFresh = false;
+    return started;
+  }
+
   reset(): void {
     if (this.activePointer !== null && this.canvas.hasPointerCapture?.(this.activePointer)) {
       this.canvas.releasePointerCapture?.(this.activePointer);
@@ -113,6 +128,9 @@ export class Input {
     this.actions.clear();
     this.activePointer = null;
     this.pointerPressed = false;
+    this.pointerStartFresh = false;
+    this.pointerActive = false;
+    this.pointerType = null;
     this.pointerFresh = false;
     this.recompute();
   }
