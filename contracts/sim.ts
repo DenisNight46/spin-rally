@@ -8,6 +8,8 @@ export interface PaddleInput {
   power: boolean; slice: boolean; serve: boolean;
   /** Optional vertical racket-drive velocity used by the offline AI stroke controller. */
   swingY?: number;
+  /** Optional forward racket-drive velocity used by the offline AI stroke controller. */
+  swingZ?: number;
 }
 export interface PaddleState extends Vec3 {
   vx: number; vy: number; vz: number;
@@ -145,6 +147,7 @@ export class TableTennisSim {
     target.z=clamp(Number.isFinite(input.z)?input.z:sign*1.48,sign>0?1.38:-1.75,sign>0?1.75:-1.38);
     target.power=false; target.slice=false; target.serve=Boolean(input.serve);
     target.swingY=clamp(Number.isFinite(input.swingY) ? input.swingY as number : 0,-8,8);
+    target.swingZ=clamp(Number.isFinite(input.swingZ) ? input.swingZ as number : 0,-8,8);
   }
   getInput(side: Side): PaddleInput { return this.inputs[side]; }
 
@@ -193,7 +196,7 @@ export class TableTennisSim {
       // Human racket-head speed is materially higher than a walking hand target.
       // These caps allow compact 8–11 m/s strokes while preventing teleport hits.
       const maxSpeed=10.5, maxAccel=70;
-      const desired={x:clamp((input.x-p.x)*15,-maxSpeed,maxSpeed),y:clamp((input.y-p.y)*15+(input.swingY??0),-maxSpeed,maxSpeed),z:clamp((input.z-p.z)*15,-maxSpeed,maxSpeed)};
+      const desired={x:clamp((input.x-p.x)*15,-maxSpeed,maxSpeed),y:clamp((input.y-p.y)*15+(input.swingY??0),-maxSpeed,maxSpeed),z:clamp((input.z-p.z)*15+(input.swingZ??0),-maxSpeed,maxSpeed)};
       p.vx+=clamp(desired.x-p.vx,-maxAccel*dt,maxAccel*dt);
       p.vy+=clamp(desired.y-p.vy,-maxAccel*dt,maxAccel*dt);
       p.vz+=clamp(desired.z-p.vz,-maxAccel*dt,maxAccel*dt);
