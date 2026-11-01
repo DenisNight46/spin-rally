@@ -5,6 +5,7 @@ import { SceneView } from "./scene";
 import { TableTennisAI, type Difficulty } from "./ai";
 import { NetworkClient } from "./network";
 import { storage, trainingRecord } from "./storage";
+import { getTrainingProgress } from "./training";
 import type { GameController, GameMode, GameUIState, NetworkStatus } from "./types";
 import type { ServerMessage } from "@contracts/network";
 import { DEFAULT_SETTINGS, TableTennisSim, type MatchState, type PaddleInput, type PlayerSettings, type Side } from "@contracts/sim";
@@ -351,9 +352,12 @@ class SpinRallyGame {
       this.ai.update(this.sim, dt);
       this.sim.step(1 / 120);
       this.sim.step(1 / 120);
-      if (this.mode === "training" && this.sim.state.rallyHits > this.trainingBest) {
-        this.trainingBest = this.sim.state.rallyHits;
-        trainingRecord.set(this.trainingBest);
+      if (this.mode === "training") {
+        const progress = getTrainingProgress(this.sim.state.rallyHits, this.trainingBest);
+        if (progress.best > this.trainingBest) {
+          this.trainingBest = progress.best;
+          trainingRecord.set(this.trainingBest);
+        }
       }
     } else if (this.mode === "online") {
       this.sendClock += dt;
