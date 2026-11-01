@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { DEFAULT_INPUT, TABLE, TableTennisSim } from "../contracts/sim";
 import { predictAIIntercept, TableTennisAI } from "../src/game/ai";
+import { predictRacketIntercept } from "../src/game/trajectory";
 import { NATIONAL_TEAMS, NATIONAL_TEAM_FLAG_CODES, getNationalTeam, getTeamsByConfederation } from "../src/game/teams";
 
 function racketImpact(targetX: number, targetY: number) {
@@ -63,6 +64,53 @@ describe("online snapshot interpolation", () => {
     expect(beforeTransition.ball.p.x).toBe(-0.4);
     expect(afterTransition.ball.p.x).toBe(0.8);
     expect(afterTransition.scores[0]).toBe(1);
+  });
+});
+
+describe("shared racket trajectory prediction", () => {
+  it("is symmetric for both racket planes", () => {
+    const sim = new TableTennisSim(107);
+    sim.startMatch();
+    sim.state.phase = "rally";
+    sim.state.ball = {
+      p: { x: 0.2, y: 1.1, z: -0.9 },
+      v: { x: 0.3, y: 0.2, z: -3 },
+      spin: { x: 0, y: 0, z: 0 },
+      lastHitter: 0,
+      bounces: 1,
+      firstBounce: 0,
+      serve: false,
+    };
+    const left = predictRacketIntercept(sim.state, 1);
+    const mirrored = structuredClone(sim.state);
+    mirrored.ball.p.z *= -1;
+    mirrored.ball.v.z *= -1;
+    mirrored.ball.lastHitter = 1;
+    mirrored.ball.firstBounce = 1;
+    const right = predictRacketIntercept(mirrored, 0);
+
+    expect(left).not.toBeNull();
+    expect(right).not.toBeNull();
+    expect(right?.x).toBeCloseTo(left?.x ?? 0, 6);
+    expect(right?.y).toBeCloseTo(left?.y ?? 0, 6);
+    expect(right?.time).toBeCloseTo(left?.time ?? 0, 6);
+  });
+
+  it("does not predict a serve contact before the receiver's second bounce", () => {
+    const sim = new TableTennisSim(109);
+    sim.startMatch();
+    sim.state.phase = "rally";
+    sim.state.ball = {
+      p: { x: 0, y: 1.1, z: -1 },
+      v: { x: 0, y: -1.4, z: -3 },
+      spin: { x: 0, y: 0, z: 0 },
+      lastHitter: 1,
+      bounces: 0,
+      firstBounce: null,
+      serve: true,
+    };
+
+    expect(predictRacketIntercept(sim.state, 1)).toBeNull();
   });
 });
 
