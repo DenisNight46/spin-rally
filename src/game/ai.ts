@@ -192,20 +192,18 @@ export class TableTennisAI {
       // too high and sends it beyond the far end of the table.
       this.input.swingY = 1.2;
       this.input.swingZ = 1.5;
-    } else if (intercept && state.rallyHits > 1 && intercept.time < 0.14) {
-      // Later returns use a softer planned arc that clears the net and lands
-      // around the middle of the opponent's half instead of flying long.
+    } else if (intercept && state.rallyHits > 1 && intercept.time < 0.06) {
+      // Keep the stroke impulse inside the final contact window. Applying it
+      // throughout the full approach makes the racket drift away from the
+      // intercept; a short acceleration produces a controlled return instead.
       const paddle = state.paddles[1];
       const positionDrive = (this.input.y - paddle.y) * 15;
-      // Aim for a compact positive blade velocity. Lower contacts receive a
-      // little more lift; high contacts stay flatter so the ball lands before
-      // the far edge instead of sailing past the receiver. Heavy incoming
-      // topspin accelerates the ball downwards after impact, so counter it with
-      // additional upward racket speed instead of letting the return clip the net.
-      const topspinLift = clamp(Math.max(0, state.ball.spin.x) * 0.028, 0, 1.35);
-      const desiredPaddleVy = clamp(0.9 + (1 - intercept.y) + topspinLift, 0.55, 2.6);
+      // Lower contacts and heavy incoming topspin need extra lift. Cap the
+      // compensation so the ball clears the net without sailing beyond the end line.
+      const topspinLift = clamp(Math.max(0, state.ball.spin.x) * 0.015, 0, 0.75);
+      const desiredPaddleVy = clamp(1.15 + (1 - intercept.y) + topspinLift, 0.65, 1.9);
       this.input.swingY = clamp(desiredPaddleVy - positionDrive, -8, 8);
-      this.input.swingZ = 4;
+      this.input.swingZ = 3;
     }
     sim.setInput(1, this.input);
   }
