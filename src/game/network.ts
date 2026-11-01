@@ -108,6 +108,7 @@ export class NetworkClient {
           this.reconnectStartedAt = 0;
           window.clearTimeout(this.reconnectTimer);
           this.reconnectTimer = 0;
+          socket.close(4001, "Resume rejected");
         }
         if (message.type === "state") {
           this.snapshots.push({ at: performance.now(), state: cloneState(message.state) });
