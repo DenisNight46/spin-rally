@@ -58,8 +58,10 @@ function predictIntercept(sim: TableTennisSim): { x: number; y: number; time: nu
       // Mirror the authoritative table-contact friction impulse, including
       // spin transfer. A simplified velocity scale misses heavy sidespin
       // and makes the AI move to the wrong interception point.
-      const slipX = v.x - spin.z * TABLE.ballRadius;
-      const slipZ = v.z + spin.x * TABLE.ballRadius;
+      // Match TableTennisSim.applyTableImpulse exactly: omega × r with
+      // the contact arm pointing down (0, -R, 0).
+      const slipX = v.x + spin.z * TABLE.ballRadius;
+      const slipZ = v.z - spin.x * TABLE.ballRadius;
       let jx = -0.0027 * slipX * 0.72;
       let jz = -0.0027 * slipZ * 0.72;
       const maxImpulse = 0.24 * normalImpulse;
@@ -71,8 +73,8 @@ function predictIntercept(sim: TableTennisSim): { x: number; y: number; time: nu
       v.x += jx / 0.0027;
       v.z += jz / 0.0027;
       const inertia = 0.4 * 0.0027 * TABLE.ballRadius * TABLE.ballRadius;
-      spin.x += TABLE.ballRadius * jz / inertia;
-      spin.z -= TABLE.ballRadius * jx / inertia;
+      spin.x -= TABLE.ballRadius * jz / inertia;
+      spin.z += TABLE.ballRadius * jx / inertia;
       spin.x *= 0.91;
       spin.y *= 0.94;
       spin.z *= 0.91;
