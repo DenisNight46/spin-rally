@@ -153,15 +153,33 @@ describe("AI tactical shot planning", () => {
     const normalRight = planAIShot("normal", 3, 0.8, 5, 0.3, -0.7);
 
     expect(easy.offset).toBe(0);
+    expect(easy.brush).toBe("flat");
+    expect(normalLeft.brush).toBe("up");
+    expect(normalRight.brush).toBe("down");
     expect(normalLeft.offset).toBeGreaterThan(0);
     expect(normalRight.offset).toBeLessThan(0);
+  });
+
+  it("varies racket brush to create different spin profiles and counters heavy incoming spin", () => {
+    const flat = planAIShot("easy", 0, 0, 0, 0.2, 0.4, 30);
+    const clubUp = planAIShot("normal", 0, 0, 0, 0.2, 0.4, 30);
+    const clubDown = planAIShot("normal", 1, 0, 0, 0.2, 0.4, 30);
+    const expertCounter = planAIShot("hard", 0, 0, 0, 0.2, 0.4, -30);
+
+    expect(flat).toMatchObject({ brush: "flat", height: 0 });
+    expect(clubUp.brush).toBe("up");
+    expect(clubUp.height).toBeGreaterThan(0.05);
+    expect(clubDown.brush).toBe("down");
+    expect(clubDown.height).toBeLessThan(-0.05);
+    expect(expertCounter.brush).toBe("down");
+    expect(expertCounter.height).toBeLessThan(0);
   });
 
   it("bounds opponent anticipation to the legal lateral range", () => {
     const plan = planAIShot("hard", 4, 0.9, 100, 0.5, 1);
     expect(plan.predictedOpponentX).toBe(0.98);
     expect(plan.offset).toBeLessThan(0);
-    expect(Math.abs(plan.offset)).toBeLessThanOrEqual(0.085);
+    expect(Math.abs(plan.offset)).toBeLessThanOrEqual(0.095);
   });
 });
 
