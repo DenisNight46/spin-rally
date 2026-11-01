@@ -180,7 +180,7 @@ export default function Home() {
                     <div className="help-list">
                       <div><MousePointer2 /><span><b>Двигай ракетку</b><small>Мышь или палец управляют положением и движением ракетки. На телефоне веди пальцем по корту; при близком промахе сработает лёгкая помощь. На ПК также доступны WASD и стрелки.</small></span></div>
                       <div><MousePointer2 /><span><b>Создавай вращение</b><small>Проводи ракеткой по мячу: движение вверх/вниз и в стороны создаёт топспин, подрезку и боковое вращение. Цветной ореол мяча подсказывает эффект: оранжевый — топспин, голубой — подрезка, фиолетовый — боковое вращение.</small></span></div>
-                      <div><MousePointer2 /><span><b>Подача</b><small>Нажми левую кнопку мыши или кнопку подачи, когда наступит твоя очередь.</small></span></div>
+                      <div><MousePointer2 /><span><b>Подача</b><small>Когда наступит твоя очередь, плавно подними ракетку движением мыши или пальца — подача выполнится при замахе вверх.</small></span></div>
                       <div><Trophy /><span><b>Счёт</b><small>11 очков с преимуществом 2. Две подачи, при 10:10 — по одной.</small></span></div>
                     </div>
                   </>
@@ -212,10 +212,7 @@ export default function Home() {
               {ui.mode === "online" ? <><Wifi size={14} /><span>{ui.roomId || "…"}</span><i />{ui.ping} мс</> : ui.mode === "training" ? <><Trophy size={14} />УПРАЖНЕНИЕ · 10 УДАРОВ</> : ui.mode === "accuracy" ? <><Trophy size={14} />ИСПЫТАНИЕ · МЕТКОСТЬ</> : <><Bot size={14} />{DIFFICULTIES.find((item) => item.id === ui.difficulty)?.title}</>}
               {ui.mode !== "training" && ui.state.phase === "rally" && <><i /><span>РОЗЫГРЫШ · {ui.state.rallyHits}</span></>}
             </div>
-            {ui.state.phase === "serve" && ui.state.server === ui.ownSide && !waitingOnline && (
-              <button className="serve-button" onClick={() => controller.current?.serve()}><span>ПОДАЧА</span><small>Пробел или нажми</small></button>
-            )}
-            <div className="control-hint glass"><MousePointer2 size={15} /><span className="desktop-control-copy">Мышь — ракетка и вращение</span><span className="mobile-control-copy">Коснись корта и веди пальцем — ракетка следует за движением</span><i /><span className="desktop-control-copy">W/S — выше/ниже · A/D — влево/вправо · клик — подача</span></div>
+            <div className="control-hint glass"><MousePointer2 size={15} /><span className="desktop-control-copy">Мышь — ракетка и вращение</span><span className="mobile-control-copy">Коснись корта и веди пальцем — ракетка следует за движением</span><i /><span className="desktop-control-copy">W/S — выше/ниже · A/D — влево/вправо · подача — замах вверх</span></div>
           </>
         )}
 
