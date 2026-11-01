@@ -4,7 +4,7 @@ import { AudioSystem } from "./audio";
 import { SceneView } from "./scene";
 import { TableTennisAI, type Difficulty } from "./ai";
 import { NetworkClient } from "./network";
-import { storage } from "./storage";
+import { storage, trainingRecord } from "./storage";
 import type { GameController, GameMode, GameUIState, NetworkStatus } from "./types";
 import type { ServerMessage } from "@contracts/network";
 import { DEFAULT_SETTINGS, TableTennisSim, type MatchState, type PaddleInput, type PlayerSettings, type Side } from "@contracts/sim";
@@ -96,6 +96,7 @@ class SpinRallyGame {
   private humanTarget = { x: 0, y: 1.17, z: 1.48 };
   private renderLast = performance.now();
   private disposed = false;
+  private trainingBest = trainingRecord.get();
 
   constructor(private canvas: HTMLCanvasElement, private onUI: (state: GameUIState) => void) {
     this.scene = new SceneView(canvas);
@@ -350,6 +351,10 @@ class SpinRallyGame {
       this.ai.update(this.sim, dt);
       this.sim.step(1 / 120);
       this.sim.step(1 / 120);
+      if (this.mode === "training" && this.sim.state.rallyHits > this.trainingBest) {
+        this.trainingBest = this.sim.state.rallyHits;
+        trainingRecord.set(this.trainingBest);
+      }
     } else if (this.mode === "online") {
       this.sendClock += dt;
       if (this.sendClock >= 1 / 30) {
@@ -408,6 +413,7 @@ class SpinRallyGame {
       ping: this.network?.ping ?? 0,
       paused: this.paused,
       muted: this.audio.muted,
+      trainingBest: this.trainingBest,
     });
   }
 
