@@ -5,6 +5,7 @@ import type { GameController, GameUIState } from "@/game/types";
 import type { Difficulty } from "@/game/ai";
 import { NATIONAL_TEAMS, NATIONAL_TEAM_FLAG_CODES, getNationalTeam, getTeamsByConfederation, type Confederation, type NationalTeam } from "@/game/teams";
 import { storage } from "@/game/storage";
+import { getTrainingProgress } from "@/game/training";
 
 type Panel = "main" | "single" | "training" | "online" | "settings" | "help";
 
@@ -29,6 +30,7 @@ export default function Home() {
   const selectedTeam = getNationalTeam(selectedTeamId) ?? NATIONAL_TEAMS[11];
   const rivalTeam = getNationalTeam("chn") ?? NATIONAL_TEAMS[0];
   const teamForSide = (side: 0 | 1) => side === (ui?.ownSide ?? 0) ? selectedTeam : rivalTeam;
+  const trainingProgress = ui ? getTrainingProgress(ui.state.rallyHits, ui.trainingBest) : null;
   const chooseTeam = (id: string) => { setSelectedTeamId(id); storage.set("spinRally.team", id); };
 
   useEffect(() => {
@@ -202,7 +204,7 @@ export default function Home() {
               </div>
             </div>
             <div className="judge-call glass"><span className="judge-dot" /> <b>{ui.mode === "training" ? "ТРЕНЕР" : "СУДЬЯ"}</b><span>{ui.state.message}</span></div>
-            {ui.mode === "training" && <div className="training-progress glass"><span>СЕРИЯ</span><b>{Math.min(10, ui.state.rallyHits)}<small>/10</small></b><i><span style={{ width: `${Math.min(100, ui.state.rallyHits * 10)}%` }} /></i>{ui.state.rallyHits >= 10 ? <strong>ЦЕЛЬ ДОСТИГНУТА</strong> : <small>Продержи мяч в игре</small>}<small className="training-record">РЕКОРД: {ui.trainingBest}</small></div>}
+            {ui.mode === "training" && <div className="training-progress glass"><span>СЕРИЯ</span><b>{trainingProgress?.current ?? 0}<small>/10</small></b><i><span style={{ width: `${trainingProgress?.percent ?? 0}%` }} /></i>{trainingProgress?.complete ? <strong>ЦЕЛЬ ДОСТИГНУТА</strong> : <small>Продержи мяч в игре</small>}<small className="training-record">РЕКОРД: {ui.trainingBest}</small></div>}
             <div className="match-meta glass">
               {ui.mode === "online" ? <><Wifi size={14} /><span>{ui.roomId || "…"}</span><i />{ui.ping} мс</> : ui.mode === "training" ? <><Trophy size={14} />УПРАЖНЕНИЕ · 10 УДАРОВ</> : <><Bot size={14} />{DIFFICULTIES.find((item) => item.id === ui.difficulty)?.title}</>}
             </div>
