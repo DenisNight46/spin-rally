@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { DEFAULT_INPUT, TABLE, TableTennisSim } from "../contracts/sim";
-import { predictAIIntercept, TableTennisAI } from "../src/game/ai";
+import { planAIShot, predictAIIntercept, TableTennisAI } from "../src/game/ai";
 import { predictRacketIntercept } from "../src/game/trajectory";
 import { NATIONAL_TEAMS, NATIONAL_TEAM_FLAG_CODES, getNationalTeam, getTeamsByConfederation } from "../src/game/teams";
 
@@ -134,6 +134,34 @@ describe("shared racket trajectory prediction", () => {
     };
 
     expect(predictRacketIntercept(sim.state, 1)).toBeNull();
+  });
+});
+
+describe("AI tactical shot planning", () => {
+  it("anticipates lateral movement and attacks the newly exposed side", () => {
+    const stationaryPlan = planAIShot("hard", 0, -0.55, 0, 0.25, 0.5);
+    const movingRightPlan = planAIShot("hard", 0, -0.55, 4, 0.25, 0.5);
+
+    expect(stationaryPlan.offset).toBeGreaterThan(0);
+    expect(movingRightPlan.predictedOpponentX).toBeGreaterThan(0);
+    expect(movingRightPlan.offset).toBeLessThan(0);
+  });
+
+  it("keeps beginner returns central and alternates the club player's placement", () => {
+    const easy = planAIShot("easy", 2, 0.8, 5, 0.3, -0.7);
+    const normalLeft = planAIShot("normal", 2, 0.8, 5, 0.3, -0.7);
+    const normalRight = planAIShot("normal", 3, 0.8, 5, 0.3, -0.7);
+
+    expect(easy.offset).toBe(0);
+    expect(normalLeft.offset).toBeGreaterThan(0);
+    expect(normalRight.offset).toBeLessThan(0);
+  });
+
+  it("bounds opponent anticipation to the legal lateral range", () => {
+    const plan = planAIShot("hard", 4, 0.9, 100, 0.5, 1);
+    expect(plan.predictedOpponentX).toBe(0.98);
+    expect(plan.offset).toBeLessThan(0);
+    expect(Math.abs(plan.offset)).toBeLessThanOrEqual(0.085);
   });
 });
 
