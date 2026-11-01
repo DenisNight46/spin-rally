@@ -148,6 +148,26 @@ describe("table tennis ball physics", () => {
     expect(Math.abs(paddle.vz)).toBeLessThanOrEqual(10.5);
   });
 
+  it("fully resets paddles and queued inputs when a match is restarted", () => {
+    const sim = new TableTennisSim(37);
+    sim.startMatch();
+    sim.setInput(0, { ...DEFAULT_INPUT, x: 0.8, y: 1.6, serve: true });
+    sim.setInput(1, { ...DEFAULT_INPUT, x: -0.7, y: 0.9, z: -1.7, serve: true });
+    sim.state.paddles[0].x = 0.72;
+    sim.state.paddles[0].vx = 8;
+    sim.state.paddles[1].x = -0.63;
+    sim.state.paddles[1].vy = -6;
+
+    sim.startMatch();
+
+    expect(sim.getInput(0)).toEqual({ ...DEFAULT_INPUT });
+    expect(sim.getInput(1)).toEqual({ ...DEFAULT_INPUT, z: -1.48 });
+    expect(sim.state.paddles[0]).toMatchObject({ x: 0, y: 1.16, z: 1.48, vx: 0, vy: 0, vz: 0 });
+    expect(sim.state.paddles[1]).toMatchObject({ x: 0, y: 1.16, z: -1.48, vx: 0, vy: 0, vz: 0 });
+    expect(sim.state.phase).toBe("serve");
+    expect(sim.state.server).toBe(0);
+  });
+
   it("ignores invalid frame deltas without corrupting the fixed-step clock", () => {
     const guarded = new TableTennisSim(19);
     const reference = new TableTennisSim(19);
