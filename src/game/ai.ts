@@ -93,7 +93,7 @@ export class TableTennisAI {
     this.plannedRally = -1;
     this.shotOffset = 0;
     this.shotHeight = 0;
-    this.input = { ...DEFAULT_INPUT, z: AI_RACKET_Z };
+    this.input = { ...DEFAULT_INPUT, z: AI_RACKET_Z, swingY: 0, swingZ: 0 };
   }
 
   update(sim: TableTennisSim, dt: number): void {
