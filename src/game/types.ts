@@ -32,7 +32,6 @@ export interface GameController {
   createRoom: () => void;
   joinRoom: (roomId: string) => void;
   rematch: () => void;
-  serve: () => void;
   updateSettings: (settings: PlayerSettings) => void;
   toggleMute: () => void;
 }
