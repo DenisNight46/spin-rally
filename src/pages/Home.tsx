@@ -143,7 +143,9 @@ export default function Home() {
                   <>
                     <PanelTitle title="ТРЕНИРОВКА" subtitle="Отработай стабильность розыгрыша" onBack={() => setPanel("main")} />
                     <div className="training-brief"><span className="training-target">10</span><div><b>Десять ударов подряд</b><small>Не спеши. Следи за высотой мяча и возвращай ракетку к точке следующего контакта.</small><small className="training-record">Личный рекорд: {ui?.trainingBest ?? 0} ударов</small></div></div>
-                    <button className="accent-button wide" onClick={() => controller.current?.startTraining()}><Play size={17} />Начать упражнение</button>\n                    <div className="training-brief accuracy-brief"><span className="training-target accuracy-target">◎</span><div><b>Точность — попадание в цель</b><small>Направляй мяч в светящуюся зону на дальней половине стола. За каждое точное попадание — очко.</small><small className="training-record">Личный рекорд: {ui?.accuracyBest ?? 0} попаданий</small></div></div>\n                    <button className="secondary-button wide" onClick={() => controller.current?.startAccuracy()}><Trophy size={17} />Тренировать точность</button>
+                    <button className="accent-button wide" onClick={() => controller.current?.startTraining()}><Play size={17} />Начать упражнение</button>
+                    <div className="training-brief accuracy-brief"><span className="training-target accuracy-target">◎</span><div><b>Точность — попадание в цель</b><small>Направляй мяч в светящуюся зону на дальней половине стола. За каждое точное попадание — очко.</small><small className="training-record">Личный рекорд: {ui?.accuracyBest ?? 0} попаданий</small></div></div>
+                    <button className="secondary-button wide" onClick={() => controller.current?.startAccuracy()}><Trophy size={17} />Тренировать точность</button>
                   </>
                 )}
                 {panel === "online" && (
@@ -204,7 +206,8 @@ export default function Home() {
               </div>
             </div>
             <div className="judge-call glass"><span className="judge-dot" /> <b>{ui.mode === "training" || ui.mode === "accuracy" ? "ТРЕНЕР" : "СУДЬЯ"}</b><span>{ui.state.message}</span></div>
-            {ui.mode === "accuracy" && <div className="training-progress glass accuracy-progress"><span>ПОПАДАНИЯ В ЦЕЛЬ</span><b>{ui.accuracyScore}</b><small>РЕКОРД: {ui.accuracyBest}</small><small>Цель — дальняя половина стола</small></div>}\n            {ui.mode === "training" && <div className="training-progress glass"><span>СЕРИЯ</span><b>{trainingProgress?.current ?? 0}<small>/10</small></b><i><span style={{ width: `${trainingProgress?.percent ?? 0}%` }} /></i>{trainingProgress?.complete ? <strong>ЦЕЛЬ ДОСТИГНУТА</strong> : <small>Продержи мяч в игре</small>}<small className="training-record">РЕКОРД: {ui.trainingBest}</small></div>}
+            {ui.mode === "accuracy" && <div className="training-progress glass accuracy-progress"><span>ПОПАДАНИЯ В ЦЕЛЬ</span><b>{ui.accuracyScore}</b><small>РЕКОРД: {ui.accuracyBest}</small><small>Цель — дальняя половина стола</small></div>}
+            {ui.mode === "training" && <div className="training-progress glass"><span>СЕРИЯ</span><b>{trainingProgress?.current ?? 0}<small>/10</small></b><i><span style={{ width: `${trainingProgress?.percent ?? 0}%` }} /></i>{trainingProgress?.complete ? <strong>ЦЕЛЬ ДОСТИГНУТА</strong> : <small>Продержи мяч в игре</small>}<small className="training-record">РЕКОРД: {ui.trainingBest}</small></div>}
             <div className="match-meta glass">
               {ui.mode === "online" ? <><Wifi size={14} /><span>{ui.roomId || "…"}</span><i />{ui.ping} мс</> : ui.mode === "training" ? <><Trophy size={14} />УПРАЖНЕНИЕ · 10 УДАРОВ</> : ui.mode === "accuracy" ? <><Trophy size={14} />ИСПЫТАНИЕ · МЕТКОСТЬ</> : <><Bot size={14} />{DIFFICULTIES.find((item) => item.id === ui.difficulty)?.title}</>}
               {ui.mode !== "training" && ui.state.phase === "rally" && <><i /><span>РОЗЫГРЫШ · {ui.state.rallyHits}</span></>}
