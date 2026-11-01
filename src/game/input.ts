@@ -5,6 +5,19 @@ const KEYS: Record<string, ["x" | "y", number]> = {
   KeyS: ["y", -1], ArrowDown: ["y", -1],
 };
 
+/** Keep gameplay shortcuts from stealing keystrokes while a player edits a UI field. */
+export function isTextEntryTarget(target: EventTarget | null): boolean {
+  const element = target as (EventTarget & {
+    tagName?: string;
+    isContentEditable?: boolean;
+    closest?: (selector: string) => unknown;
+  }) | null;
+  const tagName = element?.tagName?.toLowerCase();
+  return tagName === "input" || tagName === "textarea" || tagName === "select" ||
+    element?.isContentEditable === true ||
+    Boolean(element?.closest?.("[contenteditable='true']"));
+}
+
 export class Input {
   x = 0;
   y = 0;
@@ -24,6 +37,7 @@ export class Input {
       this.listeners.push(() => target.removeEventListener(type, handler, options));
     };
     on<KeyboardEvent>(window, "keydown", (event) => {
+      if (isTextEntryTarget(event.target)) return;
       if (["Space", "ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(event.code)) event.preventDefault();
       if (!event.repeat) this.actions.add(event.code);
       this.held.add(event.code);
