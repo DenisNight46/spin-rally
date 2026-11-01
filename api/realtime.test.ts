@@ -101,6 +101,18 @@ describe("online room protocol", () => {
     if (hostJoined.type !== "joined") throw new Error("Host did not receive room id");
     expect(hostJoined.roomId).toMatch(/^[A-HJ-NP-Z2-9]{6}$/);
 
+    // A failed attempt to switch rooms must not evict the player from their
+    // current lobby; joining the same room twice must be idempotent.
+    const missingRoomError = waitFor(host, (m) => m.type === "error");
+    host.send(JSON.stringify({ type: "join", roomId: "ZZZZZZ", settings: DEFAULT_SETTINGS }));
+    expect((await missingRoomError).type).toBe("error");
+
+    const repeatedJoin = waitFor(host, (m) => m.type === "joined");
+    host.send(JSON.stringify({ type: "join", roomId: hostJoined.roomId, settings: DEFAULT_SETTINGS }));
+    const repeated = await repeatedJoin;
+    expect(repeated.type).toBe("joined");
+    if (repeated.type === "joined") expect(repeated.side).toBe(0);
+
     const guest = await openSocket(url);
     const guestJoinedPromise = waitFor(guest, (m) => m.type === "joined");
     const hostPeerPromise = waitFor(host, (m) => m.type === "state" && m.peerConnected);
