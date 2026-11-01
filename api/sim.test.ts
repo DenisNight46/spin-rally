@@ -421,6 +421,7 @@ describe("table tennis ball physics", () => {
       let aiHit = false;
       let receiverBounce = false;
       let lastEvent = sim.state.eventId;
+      const trace: unknown[] = [];
 
       for (let frame = 0; frame < 1200 && !receiverBounce && sim.state.phase !== "point"; frame += 1) {
         ai.update(sim, 1 / 60);
@@ -428,9 +429,8 @@ describe("table tennis ball physics", () => {
         if (sim.state.eventId !== lastEvent) {
           lastEvent = sim.state.eventId;
           if (sim.state.event?.type === "hit" && sim.state.event.side === 1) aiHit = true;
-          if (aiHit && sim.state.ball.bounces >= 1 && sim.state.ball.firstBounce === 0) {
-            receiverBounce = true;
-          }
+          if (aiHit && trace.length < 8) trace.push({ event: sim.state.event, p: { ...sim.state.ball.p }, v: { ...sim.state.ball.v }, spin: { ...sim.state.ball.spin }, paddle: { ...sim.state.paddles[1] } });
+          if (aiHit && sim.state.ball.bounces >= 1 && sim.state.ball.firstBounce === 0) receiverBounce = true;
         }
         sim.step(1 / 120);
         if (sim.state.eventId !== lastEvent) {
@@ -443,7 +443,7 @@ describe("table tennis ball physics", () => {
       }
 
       expect(aiHit, `${difficulty} failed to contact serve at seed ${seed}`).toBe(true);
-      expect(receiverBounce, `${difficulty} failed to return the ball to the server at seed ${seed}; phase=${sim.state.phase}, message=${sim.state.message}`).toBe(true);
+      expect(receiverBounce, `${difficulty} failed to return the ball to the server at seed ${seed}; phase=${sim.state.phase}, message=${sim.state.message}, ball=${JSON.stringify(sim.state.ball)}, trace=${JSON.stringify(trace)}`).toBe(true);
     }
   });
 
