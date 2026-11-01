@@ -121,6 +121,7 @@ export class TableTennisAI {
     }
 
     if (state.phase !== "rally") {
+      this.plannedRally = -1;
       this.serveDelay = 0;
       this.serveTargetX = null;
       this.input.x += (0 - this.input.x) * Math.min(1, dt * 2.5);
