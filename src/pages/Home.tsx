@@ -10,9 +10,9 @@ import { getTrainingProgress } from "@/game/training";
 type Panel = "main" | "single" | "training" | "online" | "settings" | "help";
 
 const DIFFICULTIES: Array<{ id: Difficulty; title: string; text: string; bars: number }> = [
-  { id: "easy", title: "Новичок", text: "Медленная реакция и больше неточностей", bars: 1 },
-  { id: "normal", title: "Любитель", text: "Сбалансированные скорость и точность", bars: 2 },
-  { id: "hard", title: "Профи", text: "Быстрая реакция и точное позиционирование", bars: 3 },
+  { id: "easy", title: "Новичок", text: "Играет в центр, медленнее реагирует и чаще ошибается", bars: 1 },
+  { id: "normal", title: "Любитель", text: "Чередует направления и вращение, заставляет двигаться", bars: 2 },
+  { id: "hard", title: "Профи", text: "Предугадывает движение и атакует свободную сторону", bars: 3 },
 ];
 
 const COLORS = ["#27d3a2", "#38a8ff", "#ef476f", "#f4b942", "#f7fbff", "#9b7bff", "#202b36"];
@@ -207,6 +207,7 @@ export default function Home() {
             {ui.mode === "training" && <div className="training-progress glass"><span>СЕРИЯ</span><b>{trainingProgress?.current ?? 0}<small>/10</small></b><i><span style={{ width: `${trainingProgress?.percent ?? 0}%` }} /></i>{trainingProgress?.complete ? <strong>ЦЕЛЬ ДОСТИГНУТА</strong> : <small>Продержи мяч в игре</small>}<small className="training-record">РЕКОРД: {ui.trainingBest}</small></div>}
             <div className="match-meta glass">
               {ui.mode === "online" ? <><Wifi size={14} /><span>{ui.roomId || "…"}</span><i />{ui.ping} мс</> : ui.mode === "training" ? <><Trophy size={14} />УПРАЖНЕНИЕ · 10 УДАРОВ</> : <><Bot size={14} />{DIFFICULTIES.find((item) => item.id === ui.difficulty)?.title}</>}
+              {ui.mode !== "training" && ui.state.phase === "rally" && <><i /><span>РОЗЫГРЫШ · {ui.state.rallyHits}</span></>}
             </div>
             {ui.state.phase === "serve" && ui.state.server === ui.ownSide && !waitingOnline && (
               <button className="serve-button" onClick={() => controller.current?.serve()}><span>ПОДАЧА</span><small>Пробел или нажми</small></button>
