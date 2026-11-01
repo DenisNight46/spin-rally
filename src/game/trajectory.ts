@@ -90,3 +90,18 @@ export function predictRacketIntercept(
 
   return null;
 }
+
+
+/**
+ * Small aim-assist envelope for near-miss contacts. Touch assistance is
+ * deliberately weaker so the racket never feels detached from the finger.
+ */
+export function getContactAssistWeight(distance: number, time: number, touch: boolean): number {
+  if (!Number.isFinite(distance) || !Number.isFinite(time) || distance < 0 || time <= 0 || time >= 0.38 || distance >= 0.42) {
+    return 0;
+  }
+  const strength = touch ? 0.14 : 0.24;
+  const proximity = 1 - distance / 0.42;
+  const urgency = 1 - time / 0.38;
+  return strength * proximity * urgency;
+}
