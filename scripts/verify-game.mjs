@@ -241,7 +241,44 @@ await page.keyboard.press("Escape");
 await page.waitForTimeout(300);
 await page.screenshot({ path: join(SHOTS, "03-paused.png") });
 
-// 6) Zero console errors
+// 6) Mobile viewport smoke: verify touch guidance, safe-area viewport and direct racket tracking.
+const mobilePage = await browser.newPage({
+  viewport: { width: 390, height: 844 },
+  deviceScaleFactor: 2,
+  isMobile: true,
+  hasTouch: true,
+});
+const mobileErrors = [];
+mobilePage.on("console", (m) => { if (m.type() === "error") mobileErrors.push(m.text()); });
+mobilePage.on("pageerror", (e) => mobileErrors.push(String(e)));
+await mobilePage.goto(`http://127.0.0.1:${port}/`, { waitUntil: "networkidle" });
+await mobilePage.waitForFunction(() => window.__GAME_READY__ === true, null, { timeout: 8000 });
+await mobilePage.getByRole("button", { name: /Одиночный матч/ }).click();
+await mobilePage.getByRole("button", { name: "Новичок" }).click();
+await mobilePage.waitForTimeout(250);
+const mobileUi = await mobilePage.evaluate(() => ({
+  hintVisible: getComputedStyle(document.querySelector(".control-hint")).display !== "none",
+  touchAction: getComputedStyle(document.querySelector("#game-canvas")).touchAction,
+  viewportHeight: document.documentElement.clientHeight,
+  gameHeight: document.querySelector("#game-root").getBoundingClientRect().height,
+  probe: window.__gameProbe?.(),
+}));
+if (!mobileUi.hintVisible) fail("mobile touch-control hint is hidden");
+if (mobileUi.touchAction !== "none") fail(`mobile canvas touch-action is ${mobileUi.touchAction}, expected none`);
+if (Math.abs(mobileUi.viewportHeight - mobileUi.gameHeight) > 2) fail("mobile game surface does not fill the dynamic viewport");
+const mobileBox = await mobilePage.locator("#game-canvas").boundingBox();
+if (mobileBox) {
+  await mobilePage.mouse.move(mobileBox.x + mobileBox.width * 0.72, mobileBox.y + mobileBox.height * 0.42);
+  await mobilePage.waitForTimeout(300);
+  const moved = await mobilePage.evaluate(() => window.__gameProbe?.());
+  if (mobileUi.probe && moved && Math.hypot(moved.x - mobileUi.probe.x, moved.y - mobileUi.probe.y) < 0.03) {
+    fail("mobile viewport pointer movement did not move the racket");
+  }
+}
+if (mobileErrors.length) fail(`mobile page reported ${mobileErrors.length} console error(s): ${mobileErrors[0]}`);
+await mobilePage.close();
+
+// 7) Zero console errors
 if (consoleErrors.length) fail(`${consoleErrors.length} console error(s): ${consoleErrors[0]}`);
 
 await browser.close();
