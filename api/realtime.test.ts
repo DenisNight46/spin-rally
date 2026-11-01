@@ -168,5 +168,19 @@ describe("online room protocol", () => {
       expect(hostReconnected.state.scores).toEqual([0, 0]);
       expect(hostReconnected.state.phase).toBe("serve");
     }
+
+    // A reconnect can beat the server's TCP close notification. A valid
+    // session token must atomically replace the stale socket without freeing
+    // the seat or resetting the match.
+    const replacement = await openSocket(url);
+    const replacementJoinedPromise = waitFor(replacement, (m) => m.type === "joined");
+    const oldSocketClosed = new Promise<void>((resolve) => returningGuest.once("close", () => resolve()));
+    const takeoverState = waitFor(host, (m) => m.type === "state" && m.peerConnected);
+    replacement.send(JSON.stringify({ type: "resume", roomId: hostJoined.roomId, token: resumeToken }));
+    const replacementJoined = await replacementJoinedPromise;
+    expect(replacementJoined.type).toBe("joined");
+    if (replacementJoined.type === "joined") expect(replacementJoined.side).toBe(1);
+    await oldSocketClosed;
+    expect((await takeoverState).type).toBe("state");
   });
 });
