@@ -334,12 +334,13 @@ export class SceneView {
 
     // Each contact gets its own visual language: a sharp paddle strike,
     // a low table bounce, a warning at the net, or a soft serve cue.
-    const profile = {
-      hit: { color: "#ffd08a", count: 12, speed: 0.42, life: 0.38, lift: 0.2 },
-      bounce: { color: "#68dfff", count: 7, speed: 0.2, life: 0.27, lift: 0.08 },
-      net: { color: "#ff718e", count: 10, speed: 0.3, life: 0.34, lift: 0.12 },
-      serve: { color: "#9dffe0", count: 6, speed: 0.16, life: 0.3, lift: 0.1 },
-    }[event.type];
+    const profile = event.type === "hit"
+      ? { color: "#ffd08a", count: 12, speed: 0.42, life: 0.38, lift: 0.2 }
+      : event.type === "bounce"
+        ? { color: "#68dfff", count: 7, speed: 0.2, life: 0.27, lift: 0.08 }
+        : event.type === "net"
+          ? { color: "#ff718e", count: 10, speed: 0.3, life: 0.34, lift: 0.12 }
+          : { color: "#9dffe0", count: 6, speed: 0.16, life: 0.3, lift: 0.1 };
     const start = eventId * profile.count;
     for (let i = 0; i < profile.count; i += 1) {
       const particle = this.particles[(start + i) % this.particles.length];
