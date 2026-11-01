@@ -2,15 +2,6 @@ import * as THREE from "three";
 import { TABLE, type MatchState, type PlayerSettings, type Side, type SimEvent } from "@contracts/sim";
 import { getSpinVisualProfile } from "./trajectory";
 
-interface Avatar {
-  group: THREE.Group;
-  kit: THREE.MeshStandardMaterial;
-  upperArm: THREE.Mesh;
-  forearm: THREE.Mesh;
-  elbow: THREE.Mesh;
-  legs: [THREE.Mesh, THREE.Mesh];
-}
-
 interface Particle {
   mesh: THREE.Mesh;
   material: THREE.MeshBasicMaterial;
@@ -31,12 +22,9 @@ export class SceneView {
   private spinRingMaterial: THREE.MeshBasicMaterial;
   private paddles: [THREE.Group, THREE.Group];
   private paddleMaterials: [THREE.MeshStandardMaterial, THREE.MeshStandardMaterial];
-  private avatars: [Avatar, Avatar];
   private trail: THREE.Line;
   private trailPositions = new Float32Array(24 * 3);
   private particles: Particle[] = [];
-  private judgeArm: THREE.Mesh;
-  private judgeGesture = 0;
   private ownSide: Side = 0;
   private cameraTarget = new THREE.Vector3(0, 0.86, 0);
   private tempA = new THREE.Vector3();
@@ -65,7 +53,6 @@ export class SceneView {
     this.scene.fog = new THREE.Fog("#07151d", 8, 24);
     this.buildArena();
     this.buildTable();
-    this.avatars = [this.createAvatar(0), this.createAvatar(1)];
     this.paddles = [this.createPaddle(0), this.createPaddle(1)];
     this.paddleMaterials = [
       this.paddles[0].userData.material as THREE.MeshStandardMaterial,
@@ -103,7 +90,6 @@ export class SceneView {
     this.trail.frustumCulled = false;
     this.scene.add(this.trail);
     this.createParticles();
-    this.judgeArm = this.buildUmpire();
     this.resize();
     window.addEventListener("resize", this.resize);
   }
@@ -228,48 +214,6 @@ export class SceneView {
     }
   }
 
-  private createAvatar(side: Side): Avatar {
-    const sign = side === 0 ? 1 : -1;
-    const group = new THREE.Group();
-    group.position.set(0, 0, sign * 1.96);
-    const kit = new THREE.MeshStandardMaterial({ color: side === 0 ? "#27d3a2" : "#ef6a67", roughness: 0.75 });
-    const skin = new THREE.MeshStandardMaterial({ color: side === 0 ? "#d9a37d" : "#b97955", roughness: 0.8 });
-    const dark = new THREE.MeshStandardMaterial({ color: "#10232b", roughness: 0.8 });
-    const torso = new THREE.Mesh(new THREE.CapsuleGeometry(0.19, 0.36, 5, 10), kit);
-    torso.position.y = 1.15;
-    torso.scale.set(1.15, 1, 0.72);
-    torso.castShadow = true;
-    group.add(torso);
-    const head = new THREE.Mesh(new THREE.SphereGeometry(0.125, 18, 12), skin);
-    head.position.y = 1.62;
-    head.castShadow = true;
-    group.add(head);
-    const hair = new THREE.Mesh(new THREE.SphereGeometry(0.128, 16, 8, 0, Math.PI * 2, 0, Math.PI * 0.48), dark);
-    hair.position.y = 1.635;
-    group.add(hair);
-    const createLeg = (index: number): THREE.Mesh => {
-      const x = index === 0 ? -0.11 : 0.11;
-      const leg = new THREE.Mesh(new THREE.CapsuleGeometry(0.06, 0.42, 4, 8), dark);
-      leg.position.set(x, 0.55, 0);
-      leg.rotation.z = x * 0.35;
-      leg.castShadow = true;
-      group.add(leg);
-      const shoe = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.07, 0.26), dark);
-      shoe.position.set(x, 0.19, -sign * 0.05);
-      shoe.castShadow = true;
-      group.add(shoe);
-      return leg;
-    };
-    const legs: [THREE.Mesh, THREE.Mesh] = [createLeg(0), createLeg(1)];
-    this.scene.add(group);
-    const upperArm = new THREE.Mesh(new THREE.CylinderGeometry(0.047, 0.052, 1, 10), skin);
-    const forearm = new THREE.Mesh(new THREE.CylinderGeometry(0.036, 0.044, 1, 10), skin);
-    const elbow = new THREE.Mesh(new THREE.SphereGeometry(0.048, 10, 8), skin);
-    upperArm.castShadow = forearm.castShadow = elbow.castShadow = true;
-    this.scene.add(upperArm, forearm, elbow);
-    return { group, kit, upperArm, forearm, elbow, legs };
-  }
-
   private createPaddle(side: Side): THREE.Group {
     const group = new THREE.Group();
     const rubber = new THREE.MeshStandardMaterial({ color: side === 0 ? "#ef476f" : "#222b35", roughness: 0.88 });
@@ -291,34 +235,6 @@ export class SceneView {
     return group;
   }
 
-  private buildUmpire(): THREE.Mesh {
-    const group = new THREE.Group();
-    group.position.set(-1.25, 0, 0);
-    const uniform = new THREE.MeshStandardMaterial({ color: "#d5e6e8", roughness: 0.75 });
-    const dark = new THREE.MeshStandardMaterial({ color: "#15242c", roughness: 0.65 });
-    const skin = new THREE.MeshStandardMaterial({ color: "#c88e67", roughness: 0.8 });
-    const body = new THREE.Mesh(new THREE.CapsuleGeometry(0.16, 0.28, 4, 8), uniform);
-    body.position.y = 1.0;
-    group.add(body);
-    const head = new THREE.Mesh(new THREE.SphereGeometry(0.11, 16, 10), skin);
-    head.position.y = 1.4;
-    group.add(head);
-    const chair = new THREE.Mesh(new THREE.BoxGeometry(0.42, 0.06, 0.4), dark);
-    chair.position.y = 0.72;
-    group.add(chair);
-    for (const x of [-0.16, 0.16]) {
-      const leg = new THREE.Mesh(new THREE.CylinderGeometry(0.025, 0.025, 0.72, 8), dark);
-      leg.position.set(x, 0.36, 0);
-      group.add(leg);
-    }
-    this.scene.add(group);
-    const arm = new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.045, 0.48, 8), skin);
-    arm.position.set(-1.05, 1.06, 0);
-    arm.rotation.z = -0.75;
-    this.scene.add(arm);
-    return arm;
-  }
-
   private createParticles(): void {
     const geometry = new THREE.SphereGeometry(0.009, 5, 4);
     for (let i = 0; i < 28; i += 1) {
@@ -338,7 +254,6 @@ export class SceneView {
 
   handleEvent(event: SimEvent, eventId: number): void {
     if (!event.p) return;
-    if (event.type === "point" || event.type === "game") this.judgeGesture = 1;
     if (!["hit", "bounce", "net", "serve"].includes(event.type)) return;
 
     this.ballFlash = 1;
@@ -418,33 +333,7 @@ export class SceneView {
       else group.position.copy(this.tempB);
       group.rotation.set((side === 0 ? -1 : 1) * paddle.vy * 0.20, (side === 0 ? -1 : 1) * paddle.vx * 0.08 + (side === 0 ? 0 : Math.PI), 0);
       this.paddleMaterials[side].color.set(settings[side].paddle);
-      const avatar = this.avatars[side];
-      avatar.kit.color.set(settings[side].kit);
-      const sign = side === 0 ? 1 : -1;
-      const bodyOffset = side === this.ownSide ? (this.ownSide === 0 ? -0.42 : 0.42) : 0;
-      const moveBlend = 1 - Math.exp(-dt * 8.5);
-      const bodyX = paddle.x * 0.68 + bodyOffset;
-      const bodyZ = sign * (Math.abs(paddle.z) + 0.32);
-      const avatarScale = side === this.ownSide ? 0.64 : 0.82;
-      avatar.group.scale.setScalar(avatarScale);
-      avatar.group.position.x += (bodyX - avatar.group.position.x) * moveBlend;
-      avatar.group.position.z += (bodyZ - avatar.group.position.z) * moveBlend;
-      avatar.group.rotation.z = -paddle.vx * 0.014;
-      avatar.group.rotation.x = -paddle.vz * 0.012;
-      const moveSpeed = Math.hypot(paddle.vx, paddle.vz);
-      const footwork = Math.min(0.42, moveSpeed * 0.045);
-      const gait = this.elapsed * (5 + Math.min(10, moveSpeed * 1.2));
-      avatar.legs[0].rotation.z = -0.035 - paddle.vx * 0.012 - footwork * Math.sin(gait);
-      avatar.legs[1].rotation.z = 0.035 - paddle.vx * 0.012 + footwork * Math.sin(gait);
-      // Limbs are world-space meshes. Transform the shoulder from avatar-local
-      // space so scale, body lean and lateral movement stay in sync.
-      avatar.group.localToWorld(this.tempA.set(side === 0 ? 0.2 : -0.2, 1.38, sign * 0.07));
-      this.tempB.set(paddle.x, paddle.y - 0.08, paddle.z);
-      this.tempC.copy(this.tempA).lerp(this.tempB, 0.52);
-      this.tempC.y -= 0.055;
-      this.positionLimb(avatar.upperArm, this.tempA, this.tempC);
-      this.positionLimb(avatar.forearm, this.tempC, this.tempB);
-      avatar.elbow.position.copy(this.tempC);
+
     }
     for (let i = 23; i > 0; i -= 1) {
       this.trailPositions[i * 3] = this.trailPositions[(i - 1) * 3];
@@ -469,8 +358,6 @@ export class SceneView {
       particle.mesh.scale.setScalar(0.55 + progress * 0.7);
       particle.mesh.visible = particle.life > 0;
     }
-    this.judgeGesture = Math.max(0, this.judgeGesture - dt * 0.8);
-    this.judgeArm.rotation.z = -0.75 - Math.sin(this.judgeGesture * Math.PI) * 1.25;
     this.updateCamera(dt);
   }
 
@@ -482,7 +369,6 @@ export class SceneView {
     for (let side = 0 as Side; side <= 1; side = (side + 1) as Side) {
       const sign = side === 0 ? 1 : -1;
       this.paddles[side].position.set(Math.sin(t + side * 2) * 0.25, 1.15, sign * 1.4);
-      this.avatars[side].group.rotation.y = Math.sin(t * 0.4 + side) * 0.08;
     }
     this.camera.position.set(3.25 + Math.sin(t * 0.18) * 0.35, 2.65, 3.55 + Math.cos(t * 0.18) * 0.25);
     this.camera.lookAt(0, 0.85, 0);
@@ -513,7 +399,7 @@ export class SceneView {
     if (this.titleMode) return;
     const sign = this.ownSide === 0 ? 1 : -1;
     const mobile = window.innerWidth < 700;
-    this.tempA.set(0, mobile ? 2.7 : 2.72, sign * (mobile ? 4.55 : 4.45));
+    this.tempA.set(0, mobile ? 2.55 : 2.58, sign * (mobile ? 4.15 : 4.05));
     this.camera.position.lerp(this.tempA, Math.min(1, dt * 5));
     this.cameraTarget.set(0, 0.92, -sign * 0.06);
     this.camera.lookAt(this.cameraTarget);
