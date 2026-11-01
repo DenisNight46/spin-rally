@@ -239,6 +239,8 @@ class SpinRallyGame {
   private rematch(): void {
     if (this.mode === "single") {
       this.startSingle(this.difficulty);
+    } else if (this.mode === "accuracy") {
+      this.startAccuracy();
     } else if (this.mode === "online") {
       this.network?.send({ type: "rematch" });
     }
