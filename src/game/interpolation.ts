@@ -11,6 +11,10 @@ export function interpolateMatchStates(a: MatchState, b: MatchState, amount: num
     a.eventId !== b.eventId ||
     a.rallyHits !== b.rallyHits ||
     a.server !== b.server ||
+    a.ball.bounces !== b.ball.bounces ||
+    a.ball.firstBounce !== b.ball.firstBounce ||
+    a.ball.serve !== b.ball.serve ||
+    a.ball.lastHitter !== b.ball.lastHitter ||
     a.gameNumber !== b.gameNumber ||
     a.scores[0] !== b.scores[0] ||
     a.scores[1] !== b.scores[1] ||
