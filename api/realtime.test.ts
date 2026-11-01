@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it } from "vitest";
 import { createServer, type Server } from "node:http";
 import WebSocket from "ws";
-import { attachRealtime, isAllowedWebSocketOrigin, isValidPaddleInput } from "./realtime";
+import { attachRealtime, isAllowedWebSocketOrigin, isValidPaddleInput, isWaitingRoomExpired } from "./realtime";
 import { DEFAULT_SETTINGS } from "../contracts/sim";
 import type { ServerMessage } from "../contracts/network";
 
@@ -50,6 +50,14 @@ async function openSocket(url: string): Promise<WebSocket> {
 }
 
 describe("online room protocol", () => {
+  it("expires abandoned one-player lobbies after 15 minutes but keeps active rooms alive", () => {
+    const now = 1_000_000;
+    expect(isWaitingRoomExpired(1, now, now + 14 * 60_000)).toBe(false);
+    expect(isWaitingRoomExpired(1, now, now + 15 * 60_000)).toBe(true);
+    expect(isWaitingRoomExpired(2, now, now + 60 * 60_000)).toBe(false);
+    expect(isWaitingRoomExpired(0, now, now + 15 * 60_000)).toBe(true);
+  });
+
   it("accepts only same-host browser WebSocket origins", () => {
     expect(isAllowedWebSocketOrigin(undefined, "spin-rally.onrender.com")).toBe(true);
     expect(isAllowedWebSocketOrigin("https://spin-rally.onrender.com", "spin-rally.onrender.com")).toBe(true);
