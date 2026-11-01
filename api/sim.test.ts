@@ -525,7 +525,7 @@ describe("table tennis ball physics", () => {
   });
 
   it.each(["easy", "normal", "hard"] as const)("returns a legal serve to the server on %s difficulty across seeded serves", (difficulty) => {
-    for (let seed = 1; seed <= 6; seed += 1) {
+    for (let seed = 1; seed <= 12; seed += 1) {
       const sim = new TableTennisSim(seed * 17);
       const ai = new TableTennisAI(difficulty);
       sim.startMatch();
