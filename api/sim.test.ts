@@ -365,3 +365,20 @@ describe("training drill progress", () => {
     expect(getTrainingProgress(Number.NaN, Number.POSITIVE_INFINITY)).toEqual({ current: 0, best: 0, percent: 0, complete: false });
   });
 });
+
+
+describe("network heartbeat health", () => {
+  it("detects a stalled connection only after the timeout", async () => {
+    const { isHeartbeatTimedOut, NETWORK_HEARTBEAT_TIMEOUT_MS } = await import("../src/game/network-health");
+    expect(isHeartbeatTimedOut(1_000, 8_999)).toBe(false);
+    expect(isHeartbeatTimedOut(1_000, 9_000)).toBe(true);
+    expect(isHeartbeatTimedOut(1_000, 20_000)).toBe(true);
+    expect(NETWORK_HEARTBEAT_TIMEOUT_MS).toBe(8_000);
+  });
+
+  it("does not turn invalid clock values into a false timeout", async () => {
+    const { isHeartbeatTimedOut } = await import("../src/game/network-health");
+    expect(isHeartbeatTimedOut(Number.NaN, 10_000)).toBe(false);
+    expect(isHeartbeatTimedOut(1_000, Number.POSITIVE_INFINITY)).toBe(false);
+  });
+});
