@@ -196,7 +196,18 @@ if (await page.locator(".team-option.selected").count() !== 1) {
 }
 await page.locator(".panel-title button").click();
 
-// 3) Enter playing
+// 3) Enter the dedicated training drill and verify its live objective HUD.
+await page.getByRole("button", { name: /Тренировка/ }).click();
+await page.getByRole("button", { name: /Начать упражнение/ }).click();
+await page.waitForSelector(".training-progress");
+const trainingObjective = await page.locator(".training-progress").innerText();
+if (!trainingObjective.includes("/10")) fail("training objective HUD did not show the ten-hit target");
+
+// 4) Enter regular play for direction and pause assertions.
+await page.keyboard.press("Escape");
+await page.waitForTimeout(150);
+await page.keyboard.press("Escape");
+await page.waitForTimeout(250);
 await page.keyboard.press("Space");
 await page.waitForTimeout(400);
 
