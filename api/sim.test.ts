@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { DEFAULT_INPUT, TABLE, TableTennisSim } from "../contracts/sim";
 import { planAIShot, predictAIIntercept, TableTennisAI } from "../src/game/ai";
-import { getContactAssistWeight, predictRacketIntercept } from "../src/game/trajectory";
+import { getContactAssistWeight, getSpinVisualProfile, predictRacketIntercept } from "../src/game/trajectory";
 import { NATIONAL_TEAMS, NATIONAL_TEAM_FLAG_CODES, getNationalTeam, getTeamsByConfederation } from "../src/game/teams";
 
 function racketImpact(targetX: number, targetY: number) {
@@ -87,6 +87,24 @@ describe("online snapshot interpolation", () => {
     expect(beforeTransition.ball.p.x).toBe(-0.4);
     expect(afterTransition.ball.p.x).toBe(0.8);
     expect(afterTransition.scores[0]).toBe(1);
+  });
+});
+
+
+describe("arcade spin readability", () => {
+  it("uses distinct visual cues for topspin, backspin and sidespin", () => {
+    expect(getSpinVisualProfile({ x: 36, y: 0, z: 0 })).toMatchObject({ kind: "topspin", color: "#ffb45e" });
+    expect(getSpinVisualProfile({ x: -36, y: 0, z: 0 })).toMatchObject({ kind: "backspin", color: "#65b9ff" });
+    expect(getSpinVisualProfile({ x: 0, y: 0, z: 36 })).toMatchObject({ kind: "sidespin", color: "#bb8cff" });
+  });
+
+  it("scales the visual cue with spin and remains safe for invalid input", () => {
+    const light = getSpinVisualProfile({ x: 8, y: 0, z: 0 });
+    const heavy = getSpinVisualProfile({ x: 40, y: 0, z: 0 });
+    const invalid = getSpinVisualProfile({ x: Number.NaN, y: Number.POSITIVE_INFINITY, z: 0 });
+    expect(heavy.strength).toBeGreaterThan(light.strength);
+    expect(invalid.strength).toBe(0);
+    expect(invalid.kind).toBe("topspin");
   });
 });
 
