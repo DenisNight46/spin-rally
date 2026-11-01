@@ -1,4 +1,4 @@
-import { isTextEntryTarget } from "@contracts/input";
+import { isTextEntryTarget, normalizePointerPosition } from "@contracts/input";
 
 const KEYS: Record<string, ["x" | "y", number]> = {
   KeyA: ["x", -1], ArrowLeft: ["x", -1],
@@ -20,7 +20,7 @@ export class Input {
   private listeners: Array<() => void> = [];
 
   constructor(private canvas: HTMLCanvasElement) {
-    const on = <T extends Event>(target: Window | HTMLElement, type: string, fn: (event: T) => void, options?: AddEventListenerOptions) => {
+    const on = <T extends Event>(target: EventTarget, type: string, fn: (event: T) => void, options?: AddEventListenerOptions) => {
       const handler = fn as EventListener;
       target.addEventListener(type, handler, options);
       this.listeners.push(() => target.removeEventListener(type, handler, options));
@@ -37,30 +37,39 @@ export class Input {
       this.recompute();
     });
     on(window, "blur", () => this.reset());
+    on(window, "pagehide", () => this.reset());
+    on(document, "visibilitychange", () => { if (document.hidden) this.reset(); });
     on<PointerEvent>(canvas, "pointerdown", (event) => {
       // Only the primary pointer controls the racket; secondary touches must not
       // teleport it or accidentally trigger a serve.
-      if (event.button !== 0 || (this.activePointer !== null && this.activePointer !== event.pointerId)) return;
+      if (event.button !== 0 || !event.isPrimary || (this.activePointer !== null && this.activePointer !== event.pointerId)) return;
       this.activePointer = event.pointerId;
       this.pointerPressed = true;
       canvas.setPointerCapture?.(event.pointerId);
       this.updatePointer(event);
     });
     on<PointerEvent>(canvas, "pointermove", (event) => {
-      if (event.pointerType === "mouse" || this.activePointer === event.pointerId) this.updatePointer(event);
+      if ((this.activePointer === null && event.pointerType === "mouse") || this.activePointer === event.pointerId) this.updatePointer(event);
     });
-    const release = (event: PointerEvent) => {
-      if (this.activePointer === event.pointerId) this.activePointer = null;
+    const release = (event: PointerEvent, canceled = false) => {
+      if (this.activePointer !== event.pointerId) return;
+      this.activePointer = null;
+      if (canceled) {
+        this.pointerFresh = false;
+        this.pointerPressed = false;
+      }
     };
-    on<PointerEvent>(canvas, "pointerup", release);
-    on<PointerEvent>(canvas, "pointercancel", release);
+    on<PointerEvent>(canvas, "pointerup", (event) => release(event));
+    on<PointerEvent>(canvas, "pointercancel", (event) => release(event, true));
+    on<PointerEvent>(canvas, "lostpointercapture", (event) => release(event, true));
     on<PointerEvent>(canvas, "contextmenu", (event) => event.preventDefault());
   }
 
   private updatePointer(event: PointerEvent): void {
-    const rect = this.canvas.getBoundingClientRect();
-    this.pointerX = ((event.clientX - rect.left) / rect.width) * 2 - 1;
-    this.pointerY = ((event.clientY - rect.top) / rect.height) * 2 - 1;
+    const point = normalizePointerPosition(event.clientX, event.clientY, this.canvas.getBoundingClientRect());
+    if (!point) return;
+    this.pointerX = point.x;
+    this.pointerY = point.y;
     this.pointerFresh = true;
   }
 
@@ -97,6 +106,9 @@ export class Input {
   }
 
   reset(): void {
+    if (this.activePointer !== null && this.canvas.hasPointerCapture?.(this.activePointer)) {
+      this.canvas.releasePointerCapture?.(this.activePointer);
+    }
     this.held.clear();
     this.actions.clear();
     this.activePointer = null;
