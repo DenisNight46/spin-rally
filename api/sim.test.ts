@@ -428,8 +428,8 @@ describe("table tennis ball physics", () => {
         if (sim.state.eventId !== lastEvent) {
           lastEvent = sim.state.eventId;
           if (sim.state.event?.type === "hit" && sim.state.event.side === 1) aiHit = true;
-          if (aiHit && sim.state.event?.type === "bounce" && sim.state.event.p) {
-            receiverBounce = sim.state.event.p.z > 0;
+          if (aiHit && sim.state.ball.bounces >= 1 && sim.state.ball.firstBounce === 0) {
+            receiverBounce = true;
           }
         }
         sim.step(1 / 120);
