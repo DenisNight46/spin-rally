@@ -1,4 +1,4 @@
-import { randomInt } from "node:crypto";
+import { randomBytes, randomInt, timingSafeEqual } from "node:crypto";
 import type { Server as HttpServer } from "node:http";
 import { WebSocket, WebSocketServer } from "ws";
 import type { ClientMessage, ServerMessage } from "../contracts/network";
@@ -12,8 +12,10 @@ interface ClientSocket extends WebSocket {
 }
 
 interface PlayerSlot {
-  socket: ClientSocket;
+  socket: ClientSocket | null;
   settings: PlayerSettings;
+  token: string;
+  disconnectedAt: number | null;
 }
 
 interface Room {
@@ -31,6 +33,7 @@ const rooms = new Map<string, Room>();
 const CODE_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
 
 const ROOM_IDLE_TIMEOUT_MS = 15 * 60 * 1000;
+export const RECONNECT_GRACE_MS = 30 * 1000;
 
 /** A one-player lobby expires only after its connected client stops sending activity. */
 export function isWaitingRoomExpired(
@@ -77,24 +80,46 @@ function broadcastState(room: Room): void {
     type: "state",
     state: room.sim.state,
     players: players(room),
-    peerConnected: Boolean(room.players[0] && room.players[1]),
+    peerConnected: Boolean(room.players[0]?.socket && room.players[1]?.socket),
   };
-  for (const player of room.players) if (player) send(player.socket, message);
+  for (const player of room.players) if (player?.socket) send(player.socket, message);
 }
 
-function leave(socket: ClientSocket): void {
-  const room = socket.room;
-  if (!room || socket.side === undefined) return;
-  room.players[socket.side] = null;
-  socket.room = undefined;
-  if (!room.players[0] && !room.players[1]) {
-    rooms.delete(room.id);
-    return;
-  }
+function resetForWaitingPlayer(room: Room): void {
   room.rematchVotes.clear();
   room.sim = new TableTennisSim(randomInt(1, 2 ** 30));
   room.sim.state.message = "Соперник отключился. Ожидание нового игрока";
   broadcastState(room);
+}
+
+/** Explicit room changes release a seat; an unexpected socket loss reserves it briefly. */
+function leave(socket: ClientSocket, preserveForReconnect = false): void {
+  const room = socket.room;
+  if (!room || socket.side === undefined) return;
+  const side = socket.side;
+  const slot = room.players[side];
+  socket.room = undefined;
+  socket.side = undefined;
+  if (!slot || slot.socket !== socket) return;
+  if (preserveForReconnect) {
+    slot.socket = null;
+    slot.disconnectedAt = Date.now();
+    room.sim.state.message = "Соединение потеряно. Ожидаем переподключения игрока";
+    broadcastState(room);
+    return;
+  }
+  room.players[side] = null;
+  if (!room.players[0] && !room.players[1]) {
+    rooms.delete(room.id);
+    return;
+  }
+  resetForWaitingPlayer(room);
+}
+
+function tokensMatch(expected: string, supplied: string): boolean {
+  const a = Buffer.from(expected);
+  const b = Buffer.from(supplied);
+  return a.length === b.length && timingSafeEqual(a, b);
 }
 
 /** Browser WebSocket handshakes must come from the same host; non-browser clients may omit Origin. */
@@ -163,12 +188,35 @@ export function attachRealtime(server: HttpServer): void {
         const settings = cleanSettings(message.settings);
         const now = performance.now();
         const room: Room = { id, players: [null, null], sim: new TableTennisSim(randomInt(1, 2 ** 30)), tick: 0, accumulator: 0, lastTickAt: now, lastActivityAt: Date.now(), rematchVotes: new Set() };
-        room.players[0] = { socket, settings };
+        const token = randomBytes(32).toString("base64url");
+        room.players[0] = { socket, settings, token, disconnectedAt: null };
         rooms.set(id, room);
         socket.room = room;
         socket.side = 0;
         socket.settings = settings;
-        send(socket, { type: "joined", roomId: id, side: 0 });
+        send(socket, { type: "joined", roomId: id, side: 0, token });
+        broadcastState(room);
+        return;
+      }
+      if (message.type === "resume") {
+        const room = rooms.get(typeof message.roomId === "string" ? message.roomId.toUpperCase() : "");
+        const token = typeof message.token === "string" ? message.token : "";
+        const side = room?.players.findIndex((player) => player !== null && tokensMatch(player.token, token)) ?? -1;
+        const slot = room && side >= 0 ? room.players[side as Side] : null;
+        if (!room || !slot || slot.disconnectedAt === null
+          || Date.now() - slot.disconnectedAt > RECONNECT_GRACE_MS) {
+          send(socket, { type: "error", message: "Сеанс больше недоступен. Создайте новую комнату" });
+          return;
+        }
+        if (socket.room) leave(socket);
+        slot.socket = socket;
+        slot.disconnectedAt = null;
+        room.lastActivityAt = Date.now();
+        socket.room = room;
+        socket.side = side as Side;
+        socket.settings = slot.settings;
+        send(socket, { type: "joined", roomId: room.id, side: socket.side, token: slot.token });
+        room.sim.state.message = "Игрок вернулся. Продолжаем матч";
         broadcastState(room);
         return;
       }
@@ -197,12 +245,13 @@ export function attachRealtime(server: HttpServer): void {
         // full destination must never disconnect an otherwise active match.
         if (socket.room) leave(socket);
         const settings = cleanSettings(message.settings);
-        room.players[side] = { socket, settings };
+        const token = randomBytes(32).toString("base64url");
+        room.players[side] = { socket, settings, token, disconnectedAt: null };
         room.lastActivityAt = Date.now();
         socket.room = room;
         socket.side = side;
         socket.settings = settings;
-        send(socket, { type: "joined", roomId: room.id, side });
+        send(socket, { type: "joined", roomId: room.id, side, token });
         if (room.players[0] && room.players[1]) room.sim.startMatch();
         broadcastState(room);
         return;
@@ -238,17 +287,33 @@ export function attachRealtime(server: HttpServer): void {
       }
       send(socket, { type: "error", message: "Неизвестный тип сообщения" });
     });
-    socket.on("close", () => leave(socket));
-    socket.on("error", () => leave(socket));
+    socket.on("close", () => leave(socket, true));
+    socket.on("error", () => leave(socket, true));
   });
 
   const timer = setInterval(() => {
     const now = performance.now();
     for (const room of rooms.values()) {
-      const connectedPlayers = Number(Boolean(room.players[0])) + Number(Boolean(room.players[1]));
+      let expiredSeat = false;
+      for (let side = 0 as Side; side <= 1; side = (side + 1) as Side) {
+        const slot = room.players[side];
+        if (slot && !slot.socket && slot.disconnectedAt !== null
+          && Date.now() - slot.disconnectedAt >= RECONNECT_GRACE_MS) {
+          room.players[side] = null;
+          expiredSeat = true;
+        }
+      }
+      if (expiredSeat) {
+        if (!room.players[0] && !room.players[1]) {
+          rooms.delete(room.id);
+          continue;
+        }
+        resetForWaitingPlayer(room);
+      }
+      const connectedPlayers = Number(Boolean(room.players[0]?.socket)) + Number(Boolean(room.players[1]?.socket));
       if (isWaitingRoomExpired(connectedPlayers, room.lastActivityAt, Date.now())) {
         for (const player of room.players) {
-          if (player) {
+          if (player?.socket) {
             send(player.socket, { type: "error", message: "Комната закрыта из-за длительного бездействия" });
             player.socket.room = undefined;
             player.socket.side = undefined;
@@ -257,7 +322,7 @@ export function attachRealtime(server: HttpServer): void {
         rooms.delete(room.id);
         continue;
       }
-      if (!room.players[0] || !room.players[1]) {
+      if (!room.players[0]?.socket || !room.players[1]?.socket) {
         room.lastTickAt = now;
         room.accumulator = 0;
         continue;
