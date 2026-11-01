@@ -265,8 +265,8 @@ class SpinRallyGame {
       } else if (this.input.pointerFresh) {
         const projected = this.scene.pointerToRacket(this.input.pointerX, this.input.pointerY, this.ownSide);
         if (projected && this.touchDragAnchor) {
-          this.humanTarget.x += projected.x - this.touchDragAnchor.x;
-          this.humanTarget.y += projected.y - this.touchDragAnchor.y;
+          this.humanTarget.x += (projected.x - this.touchDragAnchor.x) * 0.9;
+          this.humanTarget.y += (projected.y - this.touchDragAnchor.y) * 0.75;
         }
         this.touchDragAnchor = projected;
       }
