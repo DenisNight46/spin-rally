@@ -174,15 +174,24 @@ export class TableTennisAI {
       if (this.plannedRally !== state.rallyHits) {
         this.plannedRally = state.rallyHits;
         const opponentX = state.paddles[0].x;
-        const awayFromOpponent = opponentX >= 0 ? -1 : 1;
         const variation = Math.sin(state.rallyHits * 12.9898 + this.clock * 2.17);
-        const direction = Math.abs(opponentX) < 0.16 ? (variation >= 0 ? 1 : -1) : awayFromOpponent;
-        const precision = this.difficulty === "easy" ? 0.025 : this.difficulty === "normal" ? 0.045 : 0.065;
+        // Each level has a recognisable tactical identity: the beginner keeps
+        // the return compact and central, the club player alternates placement,
+        // while the expert actively attacks the side furthest from the player.
+        const direction = this.difficulty === "easy"
+          ? 0
+          : this.difficulty === "normal"
+            ? (state.rallyHits % 2 === 0 ? 1 : -1)
+            : Math.abs(opponentX) < 0.16
+              ? (variation >= 0 ? 1 : -1)
+              : opponentX > 0 ? -1 : 1;
+        const precision = this.difficulty === "easy" ? 0 : this.difficulty === "normal" ? 0.04 : 0.085;
         this.shotOffset = direction * precision * (0.72 + Math.abs(variation) * 0.28);
-        // Alternate a compact upward brush and a flatter drive. This changes
-        // racket-head velocity, so spin comes from the same contact physics
-        // used by a human player rather than an artificial ball modifier.
-        this.shotHeight = (state.rallyHits % 2 === 0 ? 1 : -1) * (this.difficulty === "easy" ? 0.012 : 0.022);
+        // The beginner uses a flatter, safer stroke. Club and expert levels
+        // alternate a compact upward brush and a flatter drive; racket-head
+        // velocity creates the spin through the shared collision model.
+        this.shotHeight = (state.rallyHits % 2 === 0 ? 1 : -1) *
+          (this.difficulty === "easy" ? 0 : this.difficulty === "normal" ? 0.018 : 0.032);
       }
       const error = Math.sin(this.clock * 7.13 + state.rallyHits * 2.7) * level.error;
       const anticipation = clamp(level.anticipation / Math.max(intercept.time, 0.04), 0.12, 1);
