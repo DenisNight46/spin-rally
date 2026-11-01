@@ -184,7 +184,7 @@ export class TableTennisAI {
 
     // Keep this short upward stroke active every frame, independently of the AI's
     // decision throttle. It tilts the blade upward at impact and lifts the serve.
-    if (intercept && state.rallyHits === 1 && intercept.time < 0.04) {
+    if (intercept && state.rallyHits === 1 && intercept.time < 0.06) {
       this.input.swingY = 8;
       this.input.swingZ = 8;
     }
