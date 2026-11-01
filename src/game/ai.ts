@@ -186,10 +186,14 @@ export class TableTennisAI {
     // Without it, the collision can reverse the ball horizontally but leave it
     // too low to clear the net. Scale the stroke slightly by level while keeping
     // a safe minimum so even the beginner bot can sustain a legal rally.
-    if (intercept && intercept.time < 0.14) {
-      // Plan the outgoing arc to land around the middle of the opponent's half.
-      // The same target also enforces net clearance, preventing both short balls
-      // and flat shots that fly beyond the far edge before bouncing.
+    if (intercept && state.rallyHits === 1 && intercept.time < 0.06) {
+      // Preserve the proven first-serve receive stroke: it gives the descending
+      // serve enough lift and depth without disturbing the approach too early.
+      this.input.swingY = 8;
+      this.input.swingZ = 8;
+    } else if (intercept && state.rallyHits > 1 && intercept.time < 0.14) {
+      // Later returns use a softer planned arc that clears the net and lands
+      // around the middle of the opponent's half instead of flying long.
       const outgoingSpeed = Math.max(5, Math.abs(state.ball.v.z) * 0.85 + 1);
       const landingTime = (Math.abs(AI_RACKET_Z) + 0.45) / outgoingSpeed;
       const netTime = Math.abs(AI_RACKET_Z) / outgoingSpeed;
@@ -198,9 +202,7 @@ export class TableTennisAI {
       const desiredBallVy = clamp(Math.max(landingVy, netVy), 0.6, 3.5);
       const paddle = state.paddles[1];
       const positionDrive = (this.input.y - paddle.y) * 15;
-      this.input.swingY = clamp((desiredBallVy - state.ball.v.y - 1.2) / 2.2 - positionDrive, -8, 8);
-      // A measured forward drive supplies enough depth to reach the other half;
-      // its magnitude is bounded by the simulation's normal racket-speed cap.
+      this.input.swingY = clamp((desiredBallVy - state.ball.v.y - 2.9) / 2.2 - positionDrive, -8, 8);
       this.input.swingZ = 4;
     }
     sim.setInput(1, this.input);
