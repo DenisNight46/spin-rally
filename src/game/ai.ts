@@ -13,6 +13,39 @@ const AI_RACKET_Z = -1.48;
 
 const clamp = (value: number, min: number, max: number) => Math.max(min, Math.min(max, value));
 
+export interface AIShotPlan {
+  offset: number;
+  height: number;
+  predictedOpponentX: number;
+}
+
+/** Aim away from where the opponent is moving, not merely where they stood. */
+export function planAIShot(
+  difficulty: Difficulty,
+  rallyHits: number,
+  opponentX: number,
+  opponentVelocityX: number,
+  interceptTime: number,
+  variation: number,
+): AIShotPlan {
+  const leadTime = clamp(interceptTime * 0.7, 0.08, 0.28);
+  const predictedOpponentX = clamp(opponentX + opponentVelocityX * leadTime, -0.98, 0.98);
+  const direction = difficulty === "easy"
+    ? 0
+    : difficulty === "normal"
+      ? (rallyHits % 2 === 0 ? 1 : -1)
+      : Math.abs(predictedOpponentX) < 0.16
+        ? (variation >= 0 ? 1 : -1)
+        : predictedOpponentX > 0 ? -1 : 1;
+  const precision = difficulty === "easy" ? 0 : difficulty === "normal" ? 0.04 : 0.085;
+  return {
+    offset: direction * precision * (0.72 + Math.abs(variation) * 0.28),
+    height: (rallyHits % 2 === 0 ? 1 : -1) *
+      (difficulty === "easy" ? 0 : difficulty === "normal" ? 0.018 : 0.032),
+    predictedOpponentX,
+  };
+}
+
 export function predictAIIntercept(sim: TableTennisSim): { x: number; y: number; time: number } | null {
   return predictRacketIntercept(sim.state, 1);
 }
@@ -91,25 +124,22 @@ export class TableTennisAI {
       // overlap the ball, while its lateral/upward movement shapes the return.
       if (this.plannedRally !== state.rallyHits) {
         this.plannedRally = state.rallyHits;
-        const opponentX = state.paddles[0].x;
+        const opponent = state.paddles[0];
         const variation = Math.sin(state.rallyHits * 12.9898 + this.clock * 2.17);
-        // Each level has a recognisable tactical identity: the beginner keeps
-        // the return compact and central, the club player alternates placement,
-        // while the expert actively attacks the side furthest from the player.
-        const direction = this.difficulty === "easy"
-          ? 0
-          : this.difficulty === "normal"
-            ? (state.rallyHits % 2 === 0 ? 1 : -1)
-            : Math.abs(opponentX) < 0.16
-              ? (variation >= 0 ? 1 : -1)
-              : opponentX > 0 ? -1 : 1;
-        const precision = this.difficulty === "easy" ? 0 : this.difficulty === "normal" ? 0.04 : 0.085;
-        this.shotOffset = direction * precision * (0.72 + Math.abs(variation) * 0.28);
-        // The beginner uses a flatter, safer stroke. Club and expert levels
-        // alternate a compact upward brush and a flatter drive; racket-head
-        // velocity creates the spin through the shared collision model.
-        this.shotHeight = (state.rallyHits % 2 === 0 ? 1 : -1) *
-          (this.difficulty === "easy" ? 0 : this.difficulty === "normal" ? 0.018 : 0.032);
+        // Plan against the opponent's likely position at contact, not only the
+        // position from the previous snapshot. This makes the expert punish
+        // committed lateral movement while the lower levels remain readable.
+        const plan = planAIShot(
+          this.difficulty,
+          state.rallyHits,
+          opponent.x,
+          opponent.vx,
+          intercept.time,
+          variation,
+        );
+        this.shotOffset = plan.offset;
+        // Racket-head velocity creates spin through the shared collision model.
+        this.shotHeight = plan.height;
       }
       const error = Math.sin(this.clock * 7.13 + state.rallyHits * 2.7) * level.error;
       const anticipation = clamp(level.anticipation / Math.max(intercept.time, 0.04), 0.12, 1);
