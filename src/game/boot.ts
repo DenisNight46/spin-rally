@@ -362,7 +362,9 @@ class SpinRallyGame {
       this.sim.setInput(0, human);
       this.ai.update(this.sim, dt);
       this.sim.step(1 / 120);
+      this.trackAccuracyEvent();
       this.sim.step(1 / 120);
+      this.trackAccuracyEvent();
       if (this.mode === "training") {
         const progress = getTrainingProgress(this.sim.state.rallyHits, this.trainingBest);
         if (progress.best > this.trainingBest) {
