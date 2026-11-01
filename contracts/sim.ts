@@ -183,7 +183,13 @@ export class TableTennisSim {
     if(s.phase==="serve"){
       this.serveTimer+=dt;const server=s.server,sign=sideSign(server),p=s.paddles[server];
       s.ball.p.x=p.x;s.ball.p.y=Math.max(1.06,p.y+0.1+Math.sin(Math.min(this.serveTimer,0.5)*Math.PI)*0.025);s.ball.p.z=sign*1.48;
-      if(this.inputs[server].serve&&this.serveTimer>0.12){this.inputs[server].serve=false;this.beginServe();}
+      // Human serves by accelerating the racket upward through the tossed ball.
+      // Keep the legacy flag for older/network clients and the AI.
+      const racketSwing = p.vy > 1.35;
+      if((racketSwing || this.inputs[server].serve)&&this.serveTimer>0.12){
+        this.inputs[server].serve=false;
+        this.beginServe();
+      }
       return;
     }
     this.stepBall(dt);
