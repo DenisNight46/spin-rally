@@ -6,7 +6,7 @@ import { TableTennisAI, type Difficulty } from "./ai";
 import { NetworkClient } from "./network";
 import { storage, trainingRecord } from "./storage";
 import { getTrainingProgress } from "./training";
-import { predictRacketIntercept } from "./trajectory";
+import { getContactAssistWeight, predictRacketIntercept } from "./trajectory";
 import type { GameController, GameMode, GameUIState, NetworkStatus } from "./types";
 import type { ServerMessage } from "@contracts/network";
 import { DEFAULT_SETTINGS, TableTennisSim, type MatchState, type PaddleInput, type PlayerSettings, type Side } from "@contracts/sim";
@@ -286,15 +286,14 @@ class SpinRallyGame {
     if (this.input.x !== 0) this.humanTarget.x += this.input.x * dt * 1.85 * orientation;
     if (this.input.y !== 0) this.humanTarget.y += this.input.y * dt * 1.45;
 
-    // Soft contact assistance: predict the incoming ball at the player's
-    // racket plane and gently bias the target toward it. The player still
-    // controls the racket; this only reduces frustrating near-misses.
-    if (state.phase === "rally" && state.ball.v.z * sign > 0.15 && !(this.input.pointerType === "touch" && this.input.pointerActive)) {
+    // Soft contact assistance works on mouse and touch. It only nudges a
+    // nearby target toward a legal contact point; touch receives a lower cap
+    // so the racket remains firmly under the player's finger.
+    if (state.phase === "rally" && state.ball.v.z * sign > 0.15) {
       const intercept = predictRacketIntercept(state, this.ownSide, 0.38, true);
       if (intercept) {
-        // Assistance must fade to zero for distant contacts. A negative
-        // weight would actively push the racket away from the predicted ball.
-        const assist = Math.max(0, Math.min(0.24, 0.24 * (1 - intercept.time / 0.38)));
+        const distance = Math.hypot(intercept.x - this.humanTarget.x, intercept.y - this.humanTarget.y);
+        const assist = getContactAssistWeight(distance, intercept.time, this.input.pointerType === "touch");
         this.humanTarget.x += (intercept.x - this.humanTarget.x) * assist;
         this.humanTarget.y += (intercept.y - this.humanTarget.y) * assist;
       }
