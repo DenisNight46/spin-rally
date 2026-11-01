@@ -27,6 +27,45 @@ function racketImpact(targetX: number, targetY: number) {
   return sim.state.ball.spin;
 }
 
+describe("online snapshot interpolation", () => {
+  it("smooths continuous ball and paddle motion", async () => {
+    const { interpolateMatchStates } = await import("../src/game/network");
+    const first = new TableTennisSim(101);
+    const second = new TableTennisSim(101);
+    first.startMatch();
+    second.startMatch();
+    first.state.phase = second.state.phase = "rally";
+    first.state.ball.p.x = 0;
+    second.state.ball.p.x = 1;
+    first.state.paddles[0].x = -0.5;
+    second.state.paddles[0].x = 0.5;
+
+    const middle = interpolateMatchStates(first.state, second.state, 0.5);
+    expect(middle.ball.p.x).toBeCloseTo(0.5);
+    expect(middle.paddles[0].x).toBeCloseTo(0);
+  });
+
+  it("does not interpolate through a point or phase transition", async () => {
+    const { interpolateMatchStates } = await import("../src/game/network");
+    const first = new TableTennisSim(103);
+    const second = new TableTennisSim(103);
+    first.startMatch();
+    second.startMatch();
+    first.state.phase = "rally";
+    second.state.phase = "serve";
+    first.state.ball.p.x = -0.4;
+    second.state.ball.p.x = 0.8;
+    second.state.eventId += 1;
+    second.state.scores[0] += 1;
+
+    const beforeTransition = interpolateMatchStates(first.state, second.state, 0.99);
+    const afterTransition = interpolateMatchStates(first.state, second.state, 1);
+    expect(beforeTransition.ball.p.x).toBe(-0.4);
+    expect(afterTransition.ball.p.x).toBe(0.8);
+    expect(afterTransition.scores[0]).toBe(1);
+  });
+});
+
 describe("table tennis ball physics", () => {
   it("uses regulation table and ball dimensions", () => {
     expect(TABLE.width).toBe(1.525);
