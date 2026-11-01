@@ -11,13 +11,15 @@
 }
 
 * { box-sizing: border-box; }
-html, body, #root { margin: 0; width: 100%; height: 100%; overflow: hidden; }
+html, body, #root { margin: 0; width: 100%; height: 100%; min-height: 100%; overflow: hidden; overscroll-behavior: none; }
 button, input { font: inherit; }
+button, input, .glass { -webkit-tap-highlight-color: transparent; }
+button { touch-action: manipulation; }
 button { color: inherit; cursor: pointer; }
 button:focus-visible, input:focus-visible { outline: 2px solid var(--mint); outline-offset: 3px; }
-#game-root { position: fixed; inset: 0; }
+#game-root { position: fixed; inset: 0; width: 100%; height: 100vh; height: 100dvh; overflow: hidden; }
 #game-canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; touch-action: none; }
-#ui-overlay { position: absolute; inset: 0; pointer-events: none; user-select: none; }
+#ui-overlay { position: absolute; inset: 0; pointer-events: none; user-select: none; touch-action: none; }
 #ui-overlay > * { pointer-events: auto; }
 .glass { background: rgba(7, 24, 31, .68); border: 1px solid var(--line); backdrop-filter: blur(14px); }
 .glass-strong { background: linear-gradient(145deg, rgba(10, 30, 37, .94), rgba(6, 20, 27, .9)); border: 1px solid rgba(176, 231, 222, .16); backdrop-filter: blur(22px); box-shadow: 0 24px 80px rgba(0, 0, 0, .32); }
@@ -120,6 +122,7 @@ kbd { padding: 3px 6px; border: 1px solid #395254; border-bottom-width: 2px; bor
 .judge-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--mint); }
 .match-meta { position: absolute; top: 77px; right: 22px; border-radius: 9px; display: flex; align-items: center; gap: 6px; padding: 6px 9px; color: #8ba7a8; font-size: 9px; }
 .match-meta i, .control-hint i { width: 1px; height: 10px; background: var(--line); }
+.mobile-control-copy { display: none; }
 .control-hint { position: absolute; bottom: 20px; left: 22px; display: flex; align-items: center; gap: 8px; border-radius: 10px; padding: 8px 11px; color: #8ca6a7; font-size: 9px; }
 .serve-button { position: absolute; left: 50%; bottom: 38px; transform: translateX(-50%); width: 124px; height: 58px; border: 1px solid rgba(64,224,179,.5); border-radius: 16px; background: linear-gradient(135deg, rgba(64,224,179,.26), rgba(9,38,39,.88)); box-shadow: 0 0 32px rgba(64,224,179,.12); animation: breathe 1.8s infinite; }
 .serve-button span { display: block; font-family: "Oswald", sans-serif; font-size: 15px; letter-spacing: .12em; }
@@ -183,7 +186,7 @@ kbd { padding: 3px 6px; border: 1px solid #395254; border-bottom-width: 2px; bor
   .menu-row { margin-top: 10px; }
   .sub-button { min-height: 54px; flex-direction: row; }
   .quick-start, .title-footer { display: none; }
-  .game-topbar { top: 10px; left: 10px; right: 10px; grid-template-columns: 38px 1fr 38px; gap: 7px; }
+  .game-topbar { top: max(10px, env(safe-area-inset-top)); left: max(10px, env(safe-area-inset-left)); right: max(10px, env(safe-area-inset-right)); grid-template-columns: 38px 1fr 38px; gap: 7px; }
   .game-topbar > .icon-button, .game-actions .icon-button { width: 36px; height: 36px; }
   .game-actions .icon-button:first-child { display: none; }
   .scoreboard { padding: 8px 9px; border-radius: 13px; grid-template-columns: 1fr 38px 1fr; }
@@ -195,16 +198,21 @@ kbd { padding: 3px 6px; border: 1px solid #395254; border-bottom-width: 2px; bor
   .score-center span { font-size: 5px; }
   .score-center small { display: none; }
   .score-center b { font-size: 19px; }
-  .judge-call { top: 79px; font-size: 8px; max-width: 92vw; overflow: hidden; text-overflow: ellipsis; padding: 6px 10px; }
+  .judge-call { top: max(79px, calc(env(safe-area-inset-top) + 69px)); font-size: 8px; max-width: 92vw; overflow: hidden; text-overflow: ellipsis; padding: 6px 10px; }
   .judge-call b { display: none; }
   .match-meta { top: 54px; right: 10px; font-size: 7px; padding: 4px 6px; }
   .control-hint { display: none; }
-  .touch-controls { right: 13px; bottom: 16px; gap: 8px; }
+  .touch-controls { right: max(13px, env(safe-area-inset-right)); bottom: max(16px, env(safe-area-inset-bottom)); gap: 8px; }
   .stroke-button { width: 75px; height: 56px; border-radius: 15px; }
   .stroke-button span { font-size: 10px; }
   .stroke-button small { display: none; }
-  .serve-button { left: 14px; bottom: 17px; transform: none; width: 104px; height: 55px; }
+  .serve-button { left: max(14px, env(safe-area-inset-left)); bottom: max(17px, env(safe-area-inset-bottom)); transform: none; width: 104px; height: 55px; }
   .dialog { padding: 25px; }
+  .control-hint { display: flex; left: 50%; bottom: calc(max(17px, env(safe-area-inset-bottom)) + 66px); transform: translateX(-50%); max-width: calc(100vw - 24px); white-space: nowrap; font-size: 8px; padding: 7px 10px; }
+  .control-hint .desktop-control-copy { display: none; }
+  .control-hint .mobile-control-copy { display: inline; }
+  .control-hint i { display: none; }
+  .modal-backdrop { padding: max(12px, env(safe-area-inset-top)) max(12px, env(safe-area-inset-right)) max(12px, env(safe-area-inset-bottom)) max(12px, env(safe-area-inset-left)); }
 }
 
 @media (max-height: 650px) and (min-width: 701px) {
@@ -258,3 +266,15 @@ kbd { padding: 3px 6px; border: 1px solid #395254; border-bottom-width: 2px; bor
 .training-progress > small { color: #88a5a6; }
 .training-progress > strong { color: var(--mint); letter-spacing: .1em; }
 @media (max-width: 700px) { .training-progress { top: 110px; width: 150px; padding: 7px 10px; } }
+
+
+@media (max-width: 900px) and (max-height: 500px) {
+  .game-topbar { top: max(6px, env(safe-area-inset-top)); left: max(8px, env(safe-area-inset-left)); right: max(8px, env(safe-area-inset-right)); }
+  .scoreboard { padding: 5px 8px; }
+  .player-score > b { font-size: 24px; }
+  .judge-call { top: calc(max(6px, env(safe-area-inset-top)) + 48px); }
+  .match-meta { top: calc(max(6px, env(safe-area-inset-top)) + 48px); }
+  .control-hint { display: none; }
+  .serve-button { bottom: max(8px, env(safe-area-inset-bottom)); height: 48px; }
+  .menu-card { max-height: calc(100dvh - 20px - env(safe-area-inset-top) - env(safe-area-inset-bottom)); }
+}
