@@ -278,3 +278,9 @@ kbd { padding: 3px 6px; border: 1px solid #395254; border-bottom-width: 2px; bor
   .serve-button { bottom: max(8px, env(safe-area-inset-bottom)); height: 48px; }
   .menu-card { max-height: calc(100dvh - 20px - env(safe-area-inset-top) - env(safe-area-inset-bottom)); }
 }
+
+
+.accuracy-brief { margin-top: 12px; border-color: rgba(66,240,193,.32); background: rgba(66,240,193,.075); }
+.accuracy-target { color: #42f0c1; font-size: 28px; }
+.accuracy-progress { border: 1px solid rgba(66,240,193,.35); }
+.accuracy-progress > b { color: #42f0c1; }
