@@ -802,6 +802,11 @@ describe("AI legal returns on every difficulty", () => {
         { x: -34, y: 0, z: 0 },
         { x: 0, y: 0, z: 28 },
         { x: 22, y: -12, z: 18 },
+        { x: 48, y: 0, z: 0 },
+        { x: -48, y: 0, z: 0 },
+        { x: 0, y: 0, z: -40 },
+        { x: 0, y: 0, z: 40 },
+        { x: -36, y: 16, z: -24 },
       ];
 
       for (const spin of spinProfiles) {
