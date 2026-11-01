@@ -191,6 +191,51 @@ describe("AI tactical shot planning", () => {
   });
 });
 
+describe("AI spin response in live rallies", () => {
+  it.each([
+    ["topspin", { x: 34, y: 0, z: 0 }],
+    ["backspin", { x: -34, y: 0, z: 0 }],
+    ["sidespin", { x: 0, y: 0, z: 28 }],
+    ["combined spin", { x: 22, y: -12, z: 18 }],
+  ] as const)("tracks and physically returns a %s ball", (_profile, spin) => {
+    const sim = new TableTennisSim(211);
+    const ai = new TableTennisAI("hard");
+    sim.startMatch();
+    sim.state.phase = "rally";
+    sim.state.rallyHits = 2;
+    sim.state.ball = {
+      p: { x: 0.12, y: 1.12, z: -0.88 },
+      v: { x: 0.32, y: 0.12, z: -3.25 },
+      spin: { ...spin },
+      lastHitter: 0,
+      bounces: 1,
+      firstBounce: 0,
+      serve: false,
+    };
+
+    let aiHit = false;
+    let lastEvent = sim.state.eventId;
+    const trace: unknown[] = [];
+    for (let frame = 0; frame < 360 && !aiHit && sim.state.phase === "rally"; frame += 1) {
+      ai.update(sim, 1 / 60);
+      sim.step(1 / 120);
+      sim.step(1 / 120);
+      if (sim.state.eventId !== lastEvent) {
+        lastEvent = sim.state.eventId;
+        if (sim.state.event?.type === "hit" && sim.state.event.side === 1) aiHit = true;
+      }
+      if (frame % 30 === 0) trace.push({
+        ball: { p: { ...sim.state.ball.p }, v: { ...sim.state.ball.v }, spin: { ...sim.state.ball.spin } },
+        paddle: { ...sim.state.paddles[1] },
+        input: { ...sim.getInput(1) },
+      });
+    }
+
+    expect(aiHit, `AI failed to return ${_profile}: phase=${sim.state.phase}, message=${sim.state.message}, trace=${JSON.stringify(trace)}`).toBe(true);
+    expect(sim.state.ball.lastHitter).toBe(1);
+  });
+});
+
 describe("AI trajectory prediction", () => {
   it("matches the authoritative simulation through a high-spin table bounce", () => {
     const sim = new TableTennisSim(83);
