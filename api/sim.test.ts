@@ -119,6 +119,27 @@ describe("shared racket trajectory prediction", () => {
     expect(right?.time).toBeCloseTo(left?.time ?? 0, 6);
   });
 
+  it("can predict an earlier legal contact when the racket advances toward the net", () => {
+    const sim = new TableTennisSim(108);
+    sim.startMatch();
+    sim.state.phase = "rally";
+    sim.state.ball = {
+      p: { x: 0.1, y: 1.12, z: -0.32 },
+      v: { x: 0.15, y: 0.25, z: -3.2 },
+      spin: { x: 0, y: 0, z: 0 },
+      lastHitter: 0,
+      bounces: 1,
+      firstBounce: 0,
+      serve: false,
+    };
+
+    const baseline = predictRacketIntercept(sim.state, 1);
+    const advanced = predictRacketIntercept(sim.state, 1, 2, true, 0.82);
+    expect(baseline).not.toBeNull();
+    expect(advanced).not.toBeNull();
+    expect(advanced!.time).toBeLessThan(baseline!.time);
+  });
+
   it("does not predict a serve contact before the receiver's second bounce", () => {
     const sim = new TableTennisSim(109);
     sim.startMatch();
