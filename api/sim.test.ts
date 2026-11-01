@@ -823,6 +823,7 @@ describe("AI legal returns on every difficulty", () => {
         let aiHit = false;
         let legalReturn = false;
         let lastEvent = sim.state.eventId;
+        const trace: unknown[] = [];
         for (let frame = 0; frame < 720 && !legalReturn && sim.state.phase === "rally"; frame += 1) {
           ai.update(sim, 1 / 60);
           sim.step(1 / 120);
@@ -830,12 +831,16 @@ describe("AI legal returns on every difficulty", () => {
           if (sim.state.eventId === lastEvent) continue;
           lastEvent = sim.state.eventId;
           const event = sim.state.event;
-          if (event?.type === "hit" && event.side === 1) aiHit = true;
+          if (event?.type === "hit" && event.side === 1) {
+            aiHit = true;
+            trace.push({ event, ball: structuredClone(sim.state.ball), paddle: structuredClone(sim.state.paddles[1]) });
+          }
+          if (event?.type === "bounce") trace.push({ event, ball: structuredClone(sim.state.ball) });
           if (aiHit && event?.type === "bounce" && event.p && event.p.z > 0) legalReturn = true;
         }
 
         expect(aiHit, `${difficulty} bot failed to contact incoming ball with spin ${JSON.stringify(spin)}`).toBe(true);
-        expect(legalReturn, `${difficulty} bot contacted the ball but did not return it legally; phase=${sim.state.phase}, message=${sim.state.message}, spin=${JSON.stringify(spin)}`).toBe(true);
+        expect(legalReturn, `${difficulty} bot contacted the ball but did not return it legally; phase=${sim.state.phase}, message=${sim.state.message}, spin=${JSON.stringify(spin)}, trace=${JSON.stringify(trace)}`).toBe(true);
         expect(sim.state.ball.lastHitter).toBe(1);
       }
     },
