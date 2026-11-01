@@ -831,7 +831,7 @@ describe("AI legal returns on every difficulty", () => {
           lastEvent = sim.state.eventId;
           const event = sim.state.event;
           if (event?.type === "hit" && event.side === 1) aiHit = true;
-          if (aiHit && event?.type === "bounce" && event.side === 0) legalReturn = true;
+          if (aiHit && event?.type === "bounce" && event.p && event.p.z > 0) legalReturn = true;
         }
 
         expect(aiHit, `${difficulty} bot failed to contact incoming ball with spin ${JSON.stringify(spin)}`).toBe(true);
