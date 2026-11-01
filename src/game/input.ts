@@ -1,22 +1,11 @@
+import { isTextEntryTarget } from "@contracts/input";
+
 const KEYS: Record<string, ["x" | "y", number]> = {
   KeyA: ["x", -1], ArrowLeft: ["x", -1],
   KeyD: ["x", 1], ArrowRight: ["x", 1],
   KeyW: ["y", 1], ArrowUp: ["y", 1],
   KeyS: ["y", -1], ArrowDown: ["y", -1],
 };
-
-/** Keep gameplay shortcuts from stealing keystrokes while a player edits a UI field. */
-export function isTextEntryTarget(target: EventTarget | null): boolean {
-  const element = target as (EventTarget & {
-    tagName?: string;
-    isContentEditable?: boolean;
-    closest?: (selector: string) => unknown;
-  }) | null;
-  const tagName = element?.tagName?.toLowerCase();
-  return tagName === "input" || tagName === "textarea" || tagName === "select" ||
-    element?.isContentEditable === true ||
-    Boolean(element?.closest?.("[contenteditable='true']"));
-}
 
 export class Input {
   x = 0;
