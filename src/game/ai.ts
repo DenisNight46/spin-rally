@@ -194,15 +194,13 @@ export class TableTennisAI {
     } else if (intercept && state.rallyHits > 1 && intercept.time < 0.14) {
       // Later returns use a softer planned arc that clears the net and lands
       // around the middle of the opponent's half instead of flying long.
-      const outgoingSpeed = Math.max(5, Math.abs(state.ball.v.z) * 0.85 + 1);
-      const landingTime = (Math.abs(AI_RACKET_Z) + 0.45) / outgoingSpeed;
-      const netTime = Math.abs(AI_RACKET_Z) / outgoingSpeed;
-      const landingVy = (0.78 - intercept.y + 4.905 * landingTime * landingTime) / landingTime;
-      const netVy = (0.9525 - intercept.y + 4.905 * netTime * netTime) / netTime;
-      const desiredBallVy = clamp(Math.max(landingVy, netVy), 0.6, 3.5);
       const paddle = state.paddles[1];
       const positionDrive = (this.input.y - paddle.y) * 15;
-      this.input.swingY = clamp((desiredBallVy - state.ball.v.y - 2.9) / 2.2 - positionDrive, -8, 8);
+      // Aim for a compact positive blade velocity. Lower contacts receive a
+      // little more lift; high contacts stay flatter so the ball lands before
+      // the far edge instead of sailing past the receiver.
+      const desiredPaddleVy = clamp(0.9 + (1 - intercept.y), 0.55, 1.25);
+      this.input.swingY = clamp(desiredPaddleVy - positionDrive, -8, 8);
       this.input.swingZ = 4;
     }
     sim.setInput(1, this.input);
