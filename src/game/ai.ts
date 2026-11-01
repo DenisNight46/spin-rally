@@ -1,4 +1,4 @@
-import { DEFAULT_INPUT, TABLE, type PaddleInput, type TableTennisSim, type Vec3 } from "@contracts/sim";
+import { applyTableBouncePhysics, DEFAULT_INPUT, integrateBallFlight, TABLE, type PaddleInput, type TableTennisSim, type Vec3 } from "@contracts/sim";
 
 export type Difficulty = "easy" | "normal" | "hard";
 
@@ -11,11 +11,6 @@ const LEVELS = {
 const AI_RACKET_Z = -1.48;
 
 const clamp = (value: number, min: number, max: number) => Math.max(min, Math.min(max, value));
-const cross = (a: Vec3, b: Vec3): Vec3 => ({
-  x: a.y * b.z - a.z * b.y,
-  y: a.z * b.x - a.x * b.z,
-  z: a.x * b.y - a.y * b.x,
-});
 
 export function predictAIIntercept(sim: TableTennisSim): { x: number; y: number; time: number } | null {
   const ball = sim.state.ball;
@@ -32,19 +27,12 @@ export function predictAIIntercept(sim: TableTennisSim): { x: number; y: number;
   const tableTop = TABLE.y + TABLE.ballRadius;
 
   for (let i = 0; i < 480; i += 1) {
-    const speed = Math.hypot(v.x, v.y, v.z);
-    const magnus = cross(spin, v);
-    const drag = 0.045 * speed;
-    v = {
-      x: v.x + (-drag * v.x + 0.00030 * magnus.x) * dt,
-      y: v.y + (-9.81 - drag * v.y + 0.00030 * magnus.y) * dt,
-      z: v.z + (-drag * v.z + 0.00030 * magnus.z) * dt,
-    };
     const previous = { ...p };
-    p = { x: p.x + v.x * dt, y: p.y + v.y * dt, z: p.z + v.z * dt };
-    spin.x *= 1 - 0.12 * dt;
-    spin.y *= 1 - 0.12 * dt;
-    spin.z *= 1 - 0.12 * dt;
+    const predictedBall = { p, v, spin, serve: isServe } as const;
+    integrateBallFlight(predictedBall, dt);
+    p = predictedBall.p;
+    v = predictedBall.v;
+    spin = predictedBall.spin;
 
     if (previous.y >= tableTop && p.y <= tableTop && v.y < 0 &&
         Math.abs(p.x) <= TABLE.width / 2 && Math.abs(p.z) <= TABLE.length / 2) {
@@ -52,32 +40,10 @@ export function predictAIIntercept(sim: TableTennisSim): { x: number; y: number;
       p.x = previous.x + (p.x - previous.x) * fraction;
       p.z = previous.z + (p.z - previous.z) * fraction;
       p.y = tableTop;
-      const normalVelocity = v.y;
-      const normalImpulse = 0.0027 * (1 + 0.88) * Math.abs(normalVelocity);
-      v.y = Math.abs(normalVelocity) * 0.88;
-      // Mirror the authoritative table-contact friction impulse, including
-      // spin transfer. A simplified velocity scale misses heavy sidespin
-      // and makes the AI move to the wrong interception point.
-      // Match TableTennisSim.applyTableImpulse exactly: omega × r with
-      // the contact arm pointing down (0, -R, 0).
-      const slipX = v.x + spin.z * TABLE.ballRadius;
-      const slipZ = v.z - spin.x * TABLE.ballRadius;
-      let jx = -0.0027 * slipX * 0.72;
-      let jz = -0.0027 * slipZ * 0.72;
-      const maxImpulse = 0.24 * normalImpulse;
-      const tangentImpulse = Math.hypot(jx, jz);
-      if (tangentImpulse > maxImpulse && tangentImpulse > 0) {
-        jx *= maxImpulse / tangentImpulse;
-        jz *= maxImpulse / tangentImpulse;
-      }
-      v.x += jx / 0.0027;
-      v.z += jz / 0.0027;
-      const inertia = 0.4 * 0.0027 * TABLE.ballRadius * TABLE.ballRadius;
-      spin.x -= TABLE.ballRadius * jz / inertia;
-      spin.z += TABLE.ballRadius * jx / inertia;
-      spin.x *= 0.91;
-      spin.y *= 0.94;
-      spin.z *= 0.91;
+      const predictedBall = { p, v, spin, serve: isServe } as const;
+      applyTableBouncePhysics(predictedBall, predictedBounces + 1);
+      v = predictedBall.v;
+      spin = predictedBall.spin;
       predictedBounces += 1;
       // The authoritative simulation applies extra forward-speed loss on the
       // first serve bounce. Mirror it so the AI does not aim for an illegal,
