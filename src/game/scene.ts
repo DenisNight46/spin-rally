@@ -13,8 +13,10 @@ interface Avatar {
 
 interface Particle {
   mesh: THREE.Mesh;
+  material: THREE.MeshBasicMaterial;
   velocity: THREE.Vector3;
   life: number;
+  maxLife: number;
 }
 
 const Y_AXIS = new THREE.Vector3(0, 1, 0);
@@ -310,12 +312,18 @@ export class SceneView {
 
   private createParticles(): void {
     const geometry = new THREE.SphereGeometry(0.009, 5, 4);
-    const material = new THREE.MeshBasicMaterial({ color: "#c9fff0", transparent: true, opacity: 0.8 });
     for (let i = 0; i < 28; i += 1) {
+      const material = new THREE.MeshBasicMaterial({
+        color: "#c9fff0",
+        transparent: true,
+        opacity: 0.82,
+        depthWrite: false,
+        blending: THREE.AdditiveBlending,
+      });
       const mesh = new THREE.Mesh(geometry, material);
       mesh.visible = false;
       this.scene.add(mesh);
-      this.particles.push({ mesh, velocity: new THREE.Vector3(), life: 0 });
+      this.particles.push({ mesh, material, velocity: new THREE.Vector3(), life: 0, maxLife: 0.34 });
     }
   }
 
@@ -323,12 +331,31 @@ export class SceneView {
     if (!event.p) return;
     if (event.type === "point" || event.type === "game") this.judgeGesture = 1;
     if (!["hit", "bounce", "net", "serve"].includes(event.type)) return;
-    for (let i = 0; i < 8; i += 1) {
-      const particle = this.particles[(eventId * 8 + i) % this.particles.length];
-      const angle = i * Math.PI * 0.25 + eventId * 0.73;
+
+    // Each contact gets its own visual language: a sharp paddle strike,
+    // a low table bounce, a warning at the net, or a soft serve cue.
+    const profile = {
+      hit: { color: "#ffd08a", count: 12, speed: 0.42, life: 0.38, lift: 0.2 },
+      bounce: { color: "#68dfff", count: 7, speed: 0.2, life: 0.27, lift: 0.08 },
+      net: { color: "#ff718e", count: 10, speed: 0.3, life: 0.34, lift: 0.12 },
+      serve: { color: "#9dffe0", count: 6, speed: 0.16, life: 0.3, lift: 0.1 },
+    }[event.type];
+    const start = eventId * profile.count;
+    for (let i = 0; i < profile.count; i += 1) {
+      const particle = this.particles[(start + i) % this.particles.length];
+      const angle = (i / profile.count) * Math.PI * 2 + eventId * 0.73;
+      const spread = profile.speed * (0.72 + (i % 3) * 0.14);
       particle.mesh.position.set(event.p.x, event.p.y, event.p.z);
-      particle.velocity.set(Math.cos(angle) * 0.28, 0.18 + (i % 3) * 0.09, Math.sin(angle) * 0.28);
-      particle.life = 0.32;
+      particle.velocity.set(
+        Math.cos(angle) * spread,
+        profile.lift + (i % 3) * profile.lift * 0.48,
+        Math.sin(angle) * spread,
+      );
+      particle.life = profile.life;
+      particle.maxLife = profile.life;
+      particle.material.color.set(profile.color);
+      particle.material.opacity = 0.88;
+      particle.mesh.scale.setScalar(event.type === "hit" ? 1.25 : 1);
       particle.mesh.visible = true;
     }
   }
@@ -411,9 +438,12 @@ export class SceneView {
     this.trail.visible = state.phase === "rally";
     for (const particle of this.particles) {
       if (particle.life <= 0) continue;
-      particle.life -= dt;
+      particle.life = Math.max(0, particle.life - dt);
       particle.velocity.y -= dt * 1.4;
       particle.mesh.position.addScaledVector(particle.velocity, dt);
+      const progress = particle.life / particle.maxLife;
+      particle.material.opacity = 0.88 * progress;
+      particle.mesh.scale.setScalar(0.55 + progress * 0.7);
       particle.mesh.visible = particle.life > 0;
     }
     this.judgeGesture = Math.max(0, this.judgeGesture - dt * 0.8);
