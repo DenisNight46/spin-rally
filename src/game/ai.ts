@@ -188,6 +188,10 @@ export class TableTennisAI {
     // a safe minimum so even the beginner bot can sustain a legal rally.
     if (intercept && intercept.time < 0.09) {
       this.input.swingY = this.difficulty === "easy" ? 6.5 : this.difficulty === "normal" ? 7.2 : 8;
+      // The AI is on the far side: drive the blade forward toward the net as
+      // well, otherwise a slow post-bounce ball can be reflected without
+      // gaining enough depth to reach the opponent's half.
+      this.input.swingZ = 8;
     }
     sim.setInput(1, this.input);
   }
