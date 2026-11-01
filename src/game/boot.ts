@@ -274,13 +274,13 @@ class SpinRallyGame {
     } else {
       this.input.consumePointerStart();
       if (this.input.pointerFresh) {
-      const projected = this.scene.pointerToRacket(this.input.pointerX, this.input.pointerY, this.ownSide);
-      if (projected) {
-        this.humanTarget.x = projected.x;
-        this.humanTarget.y = projected.y;
-      }
-      this.touchDragAnchor = null;
-      this.input.pointerFresh = false;
+        const projected = this.scene.pointerToRacket(this.input.pointerX, this.input.pointerY, this.ownSide);
+        if (projected) {
+          this.humanTarget.x = projected.x;
+          this.humanTarget.y = projected.y;
+        }
+        this.touchDragAnchor = null;
+        this.input.pointerFresh = false;
       }
     }
     if (this.input.x !== 0) this.humanTarget.x += this.input.x * dt * 1.85 * orientation;
