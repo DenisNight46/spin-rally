@@ -202,7 +202,9 @@ export class TableTennisSim {
 
   private stepBall(dt:number):void{
     const b=this.state.ball,prev={...b.p};
-    // Keep flight forces identical to the AI trajectory predictor.\n    integrateBallFlight(b, dt);\n
+    // Keep flight forces identical to the AI trajectory predictor.
+    integrateBallFlight(b, dt);
+
     if(this.crossedNet(prev.z,b.p.z)){
       const t=clamp(-prev.z/(b.p.z-prev.z),0,1),y=prev.y+(b.p.y-prev.y)*t,x=prev.x+(b.p.x-prev.x)*t;
       if(Math.abs(x)<TABLE.width/2+0.08&&y-BALL_RADIUS<TABLE.y+TABLE.netHeight&&y+BALL_RADIUS>TABLE.y){
