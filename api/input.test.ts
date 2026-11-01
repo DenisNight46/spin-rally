@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { isTextEntryTarget } from "../src/game/input";
+import { isTextEntryTarget } from "../contracts/input";
 
-function target(overrides: Record<string, unknown>): EventTarget {
-  return overrides as EventTarget;
+function target(overrides: Record<string, unknown>): unknown {
+  return overrides;
 }
 
 describe("keyboard focus guard", () => {
