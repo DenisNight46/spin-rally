@@ -1,5 +1,6 @@
 import * as THREE from "three";
 import { TABLE, type MatchState, type PlayerSettings, type Side, type SimEvent } from "@contracts/sim";
+import { getSpinVisualProfile } from "./trajectory";
 
 interface Avatar {
   group: THREE.Group;
@@ -24,6 +25,8 @@ export class SceneView {
   readonly camera = new THREE.PerspectiveCamera(50, 1, 0.05, 80);
   private ball: THREE.Mesh;
   private ballMaterial: THREE.MeshStandardMaterial;
+  private spinRing: THREE.Mesh;
+  private spinRingMaterial: THREE.MeshBasicMaterial;
   private paddles: [THREE.Group, THREE.Group];
   private paddleMaterials: [THREE.MeshStandardMaterial, THREE.MeshStandardMaterial];
   private avatars: [Avatar, Avatar];
@@ -75,6 +78,20 @@ export class SceneView {
     seam.rotation.x = Math.PI / 2;
     this.ball.add(seam);
     this.scene.add(this.ball);
+    this.spinRingMaterial = new THREE.MeshBasicMaterial({
+      color: "#ffb45e",
+      transparent: true,
+      opacity: 0,
+      depthWrite: false,
+      blending: THREE.AdditiveBlending,
+      side: THREE.DoubleSide,
+    });
+    this.spinRing = new THREE.Mesh(
+      new THREE.TorusGeometry(TABLE.ballRadius * 1.58, TABLE.ballRadius * 0.075, 6, 40),
+      this.spinRingMaterial,
+    );
+    this.spinRing.visible = false;
+    this.scene.add(this.spinRing);
     const trailGeometry = new THREE.BufferGeometry();
     trailGeometry.setAttribute("position", new THREE.BufferAttribute(this.trailPositions, 3));
     this.trail = new THREE.Line(trailGeometry, new THREE.LineBasicMaterial({ color: "#b8fff1", transparent: true, opacity: 0.42, blending: THREE.AdditiveBlending }));
@@ -328,6 +345,19 @@ export class SceneView {
     this.ball.rotation.x += state.ball.spin.x * dt;
     this.ball.rotation.y += state.ball.spin.y * dt;
     this.ball.rotation.z += state.ball.spin.z * dt;
+    const spinVisual = getSpinVisualProfile(state.ball.spin);
+    this.spinRing.position.copy(this.ball.position);
+    this.spinRing.visible = state.phase === "rally" && spinVisual.strength > 0.045;
+    this.spinRingMaterial.color.set(spinVisual.color);
+    this.spinRingMaterial.opacity = spinVisual.strength * 0.52;
+    const ringScale = 0.82 + spinVisual.strength * 0.72;
+    this.spinRing.scale.setScalar(ringScale);
+    if (this.spinRing.visible) {
+      this.tempDir.set(state.ball.spin.x, state.ball.spin.y, state.ball.spin.z).normalize();
+      this.spinRing.quaternion.setFromUnitVectors(Y_AXIS, this.tempDir);
+      this.spinRing.rotateY(dt * (2.2 + spinVisual.strength * 5));
+    }
+    this.ballMaterial.emissiveIntensity = 0.11 + spinVisual.strength * 0.58;
     this.ballMaterial.color.set(settings[0].ball);
     this.ballMaterial.emissive.set(settings[0].ball);
     for (let side = 0 as Side; side <= 1; side = (side + 1) as Side) {
@@ -374,6 +404,9 @@ export class SceneView {
     this.trailPositions[0] = state.ball.p.x;
     this.trailPositions[1] = state.ball.p.y;
     this.trailPositions[2] = state.ball.p.z;
+    const trailMaterial = this.trail.material as THREE.LineBasicMaterial;
+    trailMaterial.color.set(spinVisual.strength > 0.06 ? spinVisual.color : "#b8fff1");
+    trailMaterial.opacity = 0.24 + Math.min(1, Math.hypot(state.ball.v.x, state.ball.v.y, state.ball.v.z) / 9) * 0.26;
     (this.trail.geometry.getAttribute("position") as THREE.BufferAttribute).needsUpdate = true;
     this.trail.visible = state.phase === "rally";
     for (const particle of this.particles) {
