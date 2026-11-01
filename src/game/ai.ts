@@ -1,4 +1,4 @@
-import { applyTableBouncePhysics, DEFAULT_INPUT, integrateBallFlight, TABLE, type PaddleInput, type TableTennisSim, type Vec3 } from "@contracts/sim";
+import { applyTableBouncePhysics, DEFAULT_INPUT, integrateBallFlight, TABLE, type PaddleInput, type TableTennisSim } from "@contracts/sim";
 
 export type Difficulty = "easy" | "normal" | "hard";
 
@@ -45,10 +45,6 @@ export function predictAIIntercept(sim: TableTennisSim): { x: number; y: number;
       v = predictedBall.v;
       spin = predictedBall.spin;
       predictedBounces += 1;
-      // The authoritative simulation applies extra forward-speed loss on the
-      // first serve bounce. Mirror it so the AI does not aim for an illegal,
-      // pre-second-bounce interception point.
-      if (isServe && predictedBounces === 1) v.z *= 0.62;
     }
 
     if (previousZ > planeZ && p.z <= planeZ) {
