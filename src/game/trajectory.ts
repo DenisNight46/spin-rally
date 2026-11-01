@@ -111,3 +111,26 @@ export function getContactAssistWeight(distance: number, time: number, touch: bo
   const urgency = 1 - time / maxTime;
   return strength * proximity * urgency;
 }
+
+export interface SpinVisualProfile {
+  strength: number;
+  color: "#ffb45e" | "#65b9ff" | "#bb8cff" | "#d8fff5";
+  kind: "topspin" | "backspin" | "sidespin" | "corkscrew";
+}
+
+/** Convert physical spin into a restrained, readable arcade visual cue. */
+export function getSpinVisualProfile(spin: { x: number; y: number; z: number }): SpinVisualProfile {
+  const x = Number.isFinite(spin.x) ? spin.x : 0;
+  const y = Number.isFinite(spin.y) ? spin.y : 0;
+  const z = Number.isFinite(spin.z) ? spin.z : 0;
+  const magnitude = Math.hypot(x, y, z);
+  if (Math.abs(y) > Math.abs(x) && Math.abs(y) > Math.abs(z)) {
+    return { strength: Math.min(1, magnitude / 44), color: "#d8fff5", kind: "corkscrew" };
+  }
+  if (Math.abs(z) > Math.abs(x)) {
+    return { strength: Math.min(1, magnitude / 44), color: "#bb8cff", kind: "sidespin" };
+  }
+  return x >= 0
+    ? { strength: Math.min(1, magnitude / 44), color: "#ffb45e", kind: "topspin" }
+    : { strength: Math.min(1, magnitude / 44), color: "#65b9ff", kind: "backspin" };
+}
