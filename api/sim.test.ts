@@ -351,3 +351,17 @@ describe("national team catalogue", () => {
     expect(getNationalTeam("not-a-team")).toBeUndefined();
   });
 });
+
+describe("training drill progress", () => {
+  it("clamps the displayed streak to the ten-hit objective", async () => {
+    const { getTrainingProgress } = await import("../src/game/training");
+    expect(getTrainingProgress(0, 4)).toEqual({ current: 0, best: 4, percent: 0, complete: false });
+    expect(getTrainingProgress(7, 4)).toEqual({ current: 7, best: 7, percent: 70, complete: false });
+    expect(getTrainingProgress(14, 9)).toEqual({ current: 10, best: 14, percent: 100, complete: true });
+  });
+
+  it("handles invalid counters without producing invalid UI values", async () => {
+    const { getTrainingProgress } = await import("../src/game/training");
+    expect(getTrainingProgress(Number.NaN, Number.POSITIVE_INFINITY)).toEqual({ current: 0, best: 0, percent: 0, complete: false });
+  });
+});
