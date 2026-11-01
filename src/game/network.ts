@@ -5,6 +5,7 @@ interface Snapshot { at: number; state: MatchState }
 const INTERPOLATION_DELAY = 95;
 
 import { interpolateMatchStates } from "./interpolation";
+import { isHeartbeatTimedOut, NETWORK_CONNECT_TIMEOUT_MS, NETWORK_HEARTBEAT_INTERVAL_MS } from "./network-health";
 
 function cloneState(state: MatchState): MatchState {
   return structuredClone(state);
@@ -13,6 +14,8 @@ function cloneState(state: MatchState): MatchState {
 export class NetworkClient {
   private socket: WebSocket | null = null;
   private pingTimer = 0;
+  private connectTimer = 0;
+  private lastPongAt = 0;
   private snapshots: Snapshot[] = [];
   ping = 0;
   onMessage: (message: ServerMessage) => void = () => {};
@@ -22,16 +25,21 @@ export class NetworkClient {
     this.closeSocket(); this.snapshots=[]; this.onStatus("connecting");
     const protocol=location.protocol==="https:"?"wss":"ws";
     const socket=new WebSocket(`${protocol}://${location.host}/ws`);this.socket=socket;
+    this.connectTimer=window.setTimeout(()=>{if(this.socket===socket&&socket.readyState===WebSocket.CONNECTING){this.onStatus("disconnected");socket.close();}},NETWORK_CONNECT_TIMEOUT_MS);
     socket.addEventListener("open",()=>{
-      if(this.socket!==socket)return;this.onStatus("connected");
+      if(this.socket!==socket)return;window.clearTimeout(this.connectTimer);this.connectTimer=0;this.lastPongAt=performance.now();this.onStatus("connected");
       this.send(action==="create"?{type:"create",settings}:{type:"join",settings,roomId:roomId??""});
-      this.pingTimer=window.setInterval(()=>this.send({type:"ping",at:performance.now()}),2000);
+      this.pingTimer=window.setInterval(()=>{
+        const now=performance.now();
+        if(isHeartbeatTimedOut(this.lastPongAt,now)){window.clearInterval(this.pingTimer);this.pingTimer=0;socket.close(4000,"Heartbeat timeout");return;}
+        this.send({type:"ping",at:now});
+      },NETWORK_HEARTBEAT_INTERVAL_MS);
     });
     socket.addEventListener("message",event=>{
       if(this.socket!==socket)return;
       try{
         const message=JSON.parse(String(event.data)) as ServerMessage;
-        if(message.type==="pong")this.ping=Math.max(0,Math.round(performance.now()-message.at));
+        if(message.type==="pong"){this.lastPongAt=performance.now();this.ping=Math.max(0,Math.round(this.lastPongAt-message.at));}
         if(message.type==="state"){
           this.snapshots.push({at:performance.now(),state:cloneState(message.state)});
           if(this.snapshots.length>12)this.snapshots.shift();
@@ -39,7 +47,7 @@ export class NetworkClient {
         this.onMessage(message);
       }catch{/* Ignore malformed packets; the next authoritative snapshot repairs the view. */}
     });
-    socket.addEventListener("close",()=>{if(this.socket!==socket)return;window.clearInterval(this.pingTimer);this.onStatus("disconnected");});
+    socket.addEventListener("close",()=>{if(this.socket!==socket)return;window.clearInterval(this.pingTimer);window.clearTimeout(this.connectTimer);this.pingTimer=0;this.connectTimer=0;this.onStatus("disconnected");});
     socket.addEventListener("error",()=>{if(this.socket===socket)this.onStatus("disconnected");});
   }
 
@@ -58,6 +66,6 @@ export class NetworkClient {
 
   send(message:ClientMessage):void{if(this.socket?.readyState===WebSocket.OPEN)this.socket.send(JSON.stringify(message));}
   sendInput(input:PaddleInput):void{this.send({type:"input",input});}
-  private closeSocket():void{window.clearInterval(this.pingTimer);this.pingTimer=0;const socket=this.socket;this.socket=null;if(socket&&socket.readyState<WebSocket.CLOSING)socket.close();}
+  private closeSocket():void{window.clearInterval(this.pingTimer);window.clearTimeout(this.connectTimer);this.pingTimer=0;this.connectTimer=0;const socket=this.socket;this.socket=null;if(socket&&socket.readyState<WebSocket.CLOSING)socket.close();}
   dispose():void{this.closeSocket();this.snapshots=[];this.onStatus=()=>{};this.onMessage=()=>{};}
 }
