@@ -471,6 +471,23 @@ describe("table tennis ball physics", () => {
     expect(Math.abs(sideways.y)).toBeGreaterThan(Math.abs(still.y) + 10);
   });
 
+  it("starts a serve from an upward racket swing without a serve button input", () => {
+    const sim = new TableTennisSim(23);
+    sim.startMatch();
+    let lastEvent = sim.state.eventId;
+
+    for (let frame = 0; frame < 30 && sim.state.phase === "serve"; frame += 1) {
+      sim.setInput(0, { ...DEFAULT_INPUT, y: 1.7, serve: false });
+      sim.step(1 / 120);
+      if (sim.state.eventId !== lastEvent) lastEvent = sim.state.eventId;
+    }
+
+    expect(sim.state.phase).toBe("rally");
+    expect(sim.state.event?.type).toBe("serve");
+    expect(sim.state.ball.serve).toBe(true);
+    expect(sim.state.rallyHits).toBe(1);
+  });
+
   it("serves with a bounce on the server half and then the receiver half", () => {
     const sim = new TableTennisSim(11);
     sim.startMatch();
