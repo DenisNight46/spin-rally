@@ -412,6 +412,41 @@ describe("table tennis ball physics", () => {
     expect(hit, `AI return diagnostics:\n${JSON.stringify({ finalPhase: sim.state.phase, finalMessage: sim.state.message, finalBall: sim.state.ball, trace }, null, 2)}`).toBe(true);
   });
 
+  it.each(["easy", "normal", "hard"] as const)("returns a legal serve to the server on %s difficulty across seeded serves", (difficulty) => {
+    for (let seed = 1; seed <= 6; seed += 1) {
+      const sim = new TableTennisSim(seed * 17);
+      const ai = new TableTennisAI(difficulty);
+      sim.startMatch();
+      sim.setInput(0, { ...DEFAULT_INPUT, z: 1.4, serve: true });
+      let aiHit = false;
+      let receiverBounce = false;
+      let lastEvent = sim.state.eventId;
+
+      for (let frame = 0; frame < 1200 && !receiverBounce && sim.state.phase !== "point"; frame += 1) {
+        ai.update(sim, 1 / 60);
+        sim.step(1 / 120);
+        if (sim.state.eventId !== lastEvent) {
+          lastEvent = sim.state.eventId;
+          if (sim.state.event?.type === "hit" && sim.state.event.side === 1) aiHit = true;
+          if (aiHit && sim.state.event?.type === "bounce" && sim.state.event.p) {
+            receiverBounce = sim.state.event.p.z > 0;
+          }
+        }
+        sim.step(1 / 120);
+        if (sim.state.eventId !== lastEvent) {
+          lastEvent = sim.state.eventId;
+          if (sim.state.event?.type === "hit" && sim.state.event.side === 1) aiHit = true;
+          if (aiHit && sim.state.event?.type === "bounce" && sim.state.event.p) {
+            receiverBounce = sim.state.event.p.z > 0;
+          }
+        }
+      }
+
+      expect(aiHit, `${difficulty} failed to contact serve at seed ${seed}`).toBe(true);
+      expect(receiverBounce, `${difficulty} failed to return the ball to the server at seed ${seed}; phase=${sim.state.phase}, message=${sim.state.message}`).toBe(true);
+    }
+  });
+
   it("gives each AI difficulty a distinct rally-placement strategy", () => {
     const makeReturn = (difficulty: "easy" | "normal" | "hard", rallyHits: number, opponentX: number) => {
       const sim = new TableTennisSim(31);
