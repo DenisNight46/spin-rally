@@ -77,8 +77,18 @@ export class TableTennisSim {
   }
 
   startMatch(): void {
-    this.state.scores=[0,0]; this.state.games=[0,0]; this.state.gameNumber=1;
-    this.state.winner=null; this.state.lastPoint=null; this.state.server=0; this.newGame=false; this.accumulator=0;
+    this.inputs = [{ ...DEFAULT_INPUT }, { ...DEFAULT_INPUT, z: -1.48 }];
+    this.state.paddles = [makePaddle(0), makePaddle(1)];
+    this.pointTimer = 0;
+    this.serveTimer = 0;
+    this.state.scores = [0, 0];
+    this.state.games = [0, 0];
+    this.state.gameNumber = 1;
+    this.state.winner = null;
+    this.state.lastPoint = null;
+    this.state.server = 0;
+    this.newGame = false;
+    this.accumulator = 0;
     this.prepareServe("Первая подача");
   }
 
