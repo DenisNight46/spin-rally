@@ -187,10 +187,11 @@ export class TableTennisAI {
     // too low to clear the net. Scale the stroke slightly by level while keeping
     // a safe minimum so even the beginner bot can sustain a legal rally.
     if (intercept && state.rallyHits === 1 && intercept.time < 0.06) {
-      // Preserve the proven first-serve receive stroke: it gives the descending
-      // serve enough lift and depth without disturbing the approach too early.
-      this.input.swingY = 8;
-      this.input.swingZ = 8;
+      // A serve has already bounced on the receiver's half. Use a compact
+      // lift rather than a full-power stroke: the latter launches the return
+      // too high and sends it beyond the far end of the table.
+      this.input.swingY = 2;
+      this.input.swingZ = 4;
     } else if (intercept && state.rallyHits > 1 && intercept.time < 0.14) {
       // Later returns use a softer planned arc that clears the net and lands
       // around the middle of the opponent's half instead of flying long.
