@@ -69,7 +69,10 @@ export function planAIShot(
 }
 
 export function predictAIIntercept(sim: TableTennisSim): { x: number; y: number; time: number } | null {
-  return predictRacketIntercept(sim.state, 1);
+  // The AI racket performs a short forward drive during contact. Predict against
+  // its actual current depth rather than the stationary baseline plane, or the
+  // ball can meet the moving blade before the planned intercept.
+  return predictRacketIntercept(sim.state, 1, 2, true, Math.abs(sim.state.paddles[1].z));
 }
 
 export class TableTennisAI {
