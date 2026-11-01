@@ -17,7 +17,7 @@ button, input, .glass { -webkit-tap-highlight-color: transparent; }
 button { touch-action: manipulation; }
 button { color: inherit; cursor: pointer; }
 button:focus-visible, input:focus-visible { outline: 2px solid var(--mint); outline-offset: 3px; }
-#game-root { position: fixed; inset: 0; width: 100%; height: 100vh; height: 100dvh; overflow: hidden; }
+#game-root { position: fixed; inset: 0; width: 100%; height: var(--tg-viewport-height, 100dvh); min-height: 100%; overflow: hidden; padding: var(--tg-safe-top, 0px) var(--tg-safe-right, 0px) var(--tg-safe-bottom, 0px) var(--tg-safe-left, 0px); }
 #game-canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; touch-action: none; }
 #ui-overlay { position: absolute; inset: 0; pointer-events: none; user-select: none; touch-action: none; }
 #ui-overlay > * { pointer-events: auto; }
