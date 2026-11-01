@@ -52,10 +52,17 @@ export function predictRacketIntercept(
       Math.abs(p.x) <= TABLE.width / 2 &&
       Math.abs(p.z) <= TABLE.length / 2
     ) {
+      const maxLegalBounces = isServe ? 2 : 1;
+      if (predictedBounces >= maxLegalBounces) return null;
       const fraction = Math.max(0, Math.min(1, (previous.y - tableTop) / Math.max(1e-7, previous.y - p.y)));
       p.x = previous.x + (p.x - previous.x) * fraction;
       p.z = previous.z + (p.z - previous.z) * fraction;
       p.y = tableTop;
+      const bounceSide: Side = p.z >= 0 ? 0 : 1;
+      const expectedSide: Side = predictedBounces === 0
+        ? (isServe ? ball.lastHitter : ball.lastHitter === 0 ? 1 : 0)
+        : (ball.lastHitter === 0 ? 1 : 0);
+      if (bounceSide !== expectedSide) return null;
       applyTableBouncePhysics({ p, v, spin, serve: isServe }, predictedBounces + 1);
       predictedBounces += 1;
     }
