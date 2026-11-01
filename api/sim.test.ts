@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { DEFAULT_INPUT, TABLE, TableTennisSim } from "../contracts/sim";
-import { TableTennisAI } from "../src/game/ai";
+import { predictAIIntercept, TableTennisAI } from "../src/game/ai";
 import { NATIONAL_TEAMS, NATIONAL_TEAM_FLAG_CODES, getNationalTeam, getTeamsByConfederation } from "../src/game/teams";
 
 function racketImpact(targetX: number, targetY: number) {
@@ -63,6 +63,55 @@ describe("online snapshot interpolation", () => {
     expect(beforeTransition.ball.p.x).toBe(-0.4);
     expect(afterTransition.ball.p.x).toBe(0.8);
     expect(afterTransition.scores[0]).toBe(1);
+  });
+});
+
+describe("AI trajectory prediction", () => {
+  it("matches the authoritative simulation through a high-spin table bounce", () => {
+    const sim = new TableTennisSim(83);
+    sim.startMatch();
+    sim.state.phase = "rally";
+    sim.state.ball = {
+      p: { x: 0.35, y: 0.92, z: -0.65 },
+      v: { x: 0.7, y: -0.3, z: -3.4 },
+      spin: { x: 38, y: -24, z: 17 },
+      lastHitter: 0,
+      bounces: 1,
+      firstBounce: 1,
+      serve: false,
+    };
+    sim.state.paddles[1].x = -0.9;
+    sim.state.paddles[1].y = 0.84;
+    sim.state.paddles[1].prevX = -0.9;
+    sim.state.paddles[1].prevY = 0.84;
+    sim.setInput(1, { ...DEFAULT_INPUT, x: -0.9, y: 0.84, z: -1.48 });
+
+    const predicted = predictAIIntercept(sim);
+    expect(predicted).not.toBeNull();
+    if (!predicted) throw new Error("AI did not predict a legal racket-plane crossing");
+
+    let actual: { x: number; y: number; time: number } | null = null;
+    const dt = 1 / 240;
+    for (let frame = 0; frame < 240; frame += 1) {
+      const before = { ...sim.state.ball.p };
+      sim.step(dt);
+      const after = sim.state.ball.p;
+      if (before.z > -1.48 && after.z <= -1.48) {
+        const fraction = (before.z + 1.48) / (before.z - after.z);
+        actual = {
+          x: before.x + (after.x - before.x) * fraction,
+          y: before.y + (after.y - before.y) * fraction,
+          time: (frame + fraction) * dt,
+        };
+        break;
+      }
+    }
+
+    expect(actual).not.toBeNull();
+    if (!actual) throw new Error("Authoritative ball did not reach the AI racket plane");
+    expect(predicted.x).toBeCloseTo(actual.x, 2);
+    expect(predicted.y).toBeCloseTo(actual.y, 2);
+    expect(predicted.time).toBeCloseTo(actual.time, 2);
   });
 });
 
