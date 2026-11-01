@@ -199,8 +199,11 @@ export class TableTennisAI {
       const positionDrive = (this.input.y - paddle.y) * 15;
       // Aim for a compact positive blade velocity. Lower contacts receive a
       // little more lift; high contacts stay flatter so the ball lands before
-      // the far edge instead of sailing past the receiver.
-      const desiredPaddleVy = clamp(0.9 + (1 - intercept.y), 0.55, 1.25);
+      // the far edge instead of sailing past the receiver. Heavy incoming
+      // topspin accelerates the ball downwards after impact, so counter it with
+      // additional upward racket speed instead of letting the return clip the net.
+      const topspinLift = clamp(Math.max(0, state.ball.spin.x) * 0.028, 0, 1.35);
+      const desiredPaddleVy = clamp(0.9 + (1 - intercept.y) + topspinLift, 0.55, 2.6);
       this.input.swingY = clamp(desiredPaddleVy - positionDrive, -8, 8);
       this.input.swingZ = 4;
     }
