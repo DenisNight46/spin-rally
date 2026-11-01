@@ -84,6 +84,16 @@ describe("online room protocol", () => {
     const url = `ws://127.0.0.1:${address.port}/ws`;
 
     const host = await openSocket(url);
+
+    // Valid JSON is not necessarily a valid protocol envelope. These packets
+    // must produce a controlled error and must not crash the WS message handler.
+    for (const packet of ["null", "[]", "42", '{"type":42}', '{"type":"unknown"}']) {
+      const errorPromise = waitFor(host, (m) => m.type === "error");
+      host.send(packet);
+      const error = await errorPromise;
+      expect(error.type).toBe("error");
+    }
+
     const hostJoinedPromise = waitFor(host, (m) => m.type === "joined");
     host.send(JSON.stringify({ type: "create", settings: DEFAULT_SETTINGS }));
     const hostJoined = await hostJoinedPromise;
