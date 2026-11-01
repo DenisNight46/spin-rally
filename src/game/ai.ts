@@ -200,10 +200,10 @@ export class TableTennisAI {
       const positionDrive = (this.input.y - paddle.y) * 15;
       // Lower contacts and heavy incoming topspin need extra lift. Cap the
       // compensation so the ball clears the net without sailing beyond the end line.
-      const topspinLift = clamp(Math.max(0, state.ball.spin.x) * 0.015, 0, 0.75);
-      const desiredPaddleVy = clamp(1.15 + (1 - intercept.y) + topspinLift, 0.65, 1.9);
+      const topspinLift = clamp(Math.max(0, state.ball.spin.x) * 0.012, 0, 0.6);
+      const desiredPaddleVy = clamp(0.9 + (1 - intercept.y) + topspinLift, 0.55, 1.65);
       this.input.swingY = clamp(desiredPaddleVy - positionDrive, -8, 8);
-      this.input.swingZ = 3;
+      this.input.swingZ = 1.5;
     }
     sim.setInput(1, this.input);
   }
