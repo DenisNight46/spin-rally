@@ -1,4 +1,5 @@
-import { applyTableBouncePhysics, DEFAULT_INPUT, integrateBallFlight, TABLE, type PaddleInput, type TableTennisSim } from "@contracts/sim";
+import { DEFAULT_INPUT, type PaddleInput, type TableTennisSim } from "@contracts/sim";
+import { predictRacketIntercept } from "./trajectory";
 
 export type Difficulty = "easy" | "normal" | "hard";
 
@@ -13,54 +14,7 @@ const AI_RACKET_Z = -1.48;
 const clamp = (value: number, min: number, max: number) => Math.max(min, Math.min(max, value));
 
 export function predictAIIntercept(sim: TableTennisSim): { x: number; y: number; time: number } | null {
-  const ball = sim.state.ball;
-  const planeZ = AI_RACKET_Z;
-  if (ball.v.z >= -0.05 || ball.p.z <= planeZ) return null;
-
-  let p = { ...ball.p };
-  let v = { ...ball.v };
-  let spin = { ...ball.spin };
-  let previousZ = p.z;
-  let predictedBounces = ball.bounces;
-  const isServe = ball.serve;
-  const dt = 1 / 240;
-  const tableTop = TABLE.y + TABLE.ballRadius;
-
-  for (let i = 0; i < 480; i += 1) {
-    const previous = { ...p };
-    const predictedBall = { p, v, spin, serve: isServe } as const;
-    integrateBallFlight(predictedBall, dt);
-    p = predictedBall.p;
-    v = predictedBall.v;
-    spin = predictedBall.spin;
-
-    if (previous.y >= tableTop && p.y <= tableTop && v.y < 0 &&
-        Math.abs(p.x) <= TABLE.width / 2 && Math.abs(p.z) <= TABLE.length / 2) {
-      const fraction = clamp((previous.y - tableTop) / Math.max(1e-7, previous.y - p.y), 0, 1);
-      p.x = previous.x + (p.x - previous.x) * fraction;
-      p.z = previous.z + (p.z - previous.z) * fraction;
-      p.y = tableTop;
-      const predictedBall = { p, v, spin, serve: isServe } as const;
-      applyTableBouncePhysics(predictedBall, predictedBounces + 1);
-      v = predictedBall.v;
-      spin = predictedBall.spin;
-      predictedBounces += 1;
-    }
-
-    if (previousZ > planeZ && p.z <= planeZ) {
-      const requiredBounces = isServe ? 2 : 1;
-      if (predictedBounces < requiredBounces) return null;
-      const fraction = clamp((previousZ - planeZ) / Math.max(1e-6, previousZ - p.z), 0, 1);
-      return {
-        x: previous.x + (p.x - previous.x) * fraction,
-        y: previous.y + (p.y - previous.y) * fraction,
-        time: (i + fraction) * dt,
-      };
-    }
-    previousZ = p.z;
-    if (p.y < TABLE.y - 0.1 || Math.abs(p.x) > 1.6 || p.z < -2.1) return null;
-  }
-  return null;
+  return predictRacketIntercept(sim.state, 1);
 }
 
 export class TableTennisAI {
