@@ -63,7 +63,7 @@ export function predictRacketIntercept(
         ? (isServe ? ball.lastHitter : ball.lastHitter === 0 ? 1 : 0)
         : (ball.lastHitter === 0 ? 1 : 0);
       if (bounceSide !== expectedSide) return null;
-      applyTableBouncePhysics({ p, v, spin, serve: isServe }, predictedBounces + 1);
+      applyTableBouncePhysics({ v, spin, serve: isServe }, predictedBounces + 1);
       predictedBounces += 1;
     }
 
