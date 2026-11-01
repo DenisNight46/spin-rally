@@ -268,11 +268,28 @@ if (mobileUi.touchAction !== "none") fail(`mobile canvas touch-action is ${mobil
 if (Math.abs(mobileUi.viewportHeight - mobileUi.gameHeight) > 2) fail("mobile game surface does not fill the dynamic viewport");
 const mobileBox = await mobilePage.locator("#game-canvas").boundingBox();
 if (mobileBox) {
-  await mobilePage.mouse.move(mobileBox.x + mobileBox.width * 0.72, mobileBox.y + mobileBox.height * 0.42);
+  const touch = await mobilePage.context().newCDPSession(mobilePage);
+  const startX = mobileBox.x + mobileBox.width * 0.5;
+  const startY = mobileBox.y + mobileBox.height * 0.65;
+  await touch.send("Input.dispatchTouchEvent", {
+    type: "touchStart",
+    touchPoints: [{ x: startX, y: startY, id: 1 }],
+  });
+  await mobilePage.waitForTimeout(80);
+  const beforeDrag = await mobilePage.evaluate(() => window.__gameProbe?.());
+  await touch.send("Input.dispatchTouchEvent", {
+    type: "touchMove",
+    touchPoints: [{ x: startX, y: startY - 100, id: 1 }],
+  });
   await mobilePage.waitForTimeout(300);
   const moved = await mobilePage.evaluate(() => window.__gameProbe?.());
+  await touch.send("Input.dispatchTouchEvent", { type: "touchEnd", touchPoints: [] });
+  await touch.detach();
+  if (beforeDrag && moved && moved.y <= beforeDrag.y + 0.03) {
+    fail(`dragging a finger upward must move the racket upward (before=${beforeDrag.y.toFixed(3)}, after=${moved.y.toFixed(3)})`);
+  }
   if (mobileUi.probe && moved && Math.hypot(moved.x - mobileUi.probe.x, moved.y - mobileUi.probe.y) < 0.03) {
-    fail("mobile viewport pointer movement did not move the racket");
+    fail("mobile touch drag did not move the racket");
   }
 }
 if (mobileErrors.length) fail(`mobile page reported ${mobileErrors.length} console error(s): ${mobileErrors[0]}`);
