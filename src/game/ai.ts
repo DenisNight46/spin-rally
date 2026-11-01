@@ -81,7 +81,7 @@ export class TableTennisAI {
   private plannedRally = -1;
   private shotOffset = 0;
   private shotHeight = 0;
-  private input: PaddleInput = { ...DEFAULT_INPUT, z: AI_RACKET_Z };
+  private input: PaddleInput = { ...DEFAULT_INPUT, z: AI_RACKET_Z, swingY: 0 };
 
   constructor(private difficulty: Difficulty = "normal") {}
 
@@ -170,7 +170,7 @@ export class TableTennisAI {
       const anticipation = clamp(level.anticipation / Math.max(intercept.time, 0.04), 0.12, 1);
       const tracking = clamp(dt * 60 * level.speed * (0.75 + anticipation), 0, 1);
       const targetX = clamp(intercept.x + this.shotOffset + error, -0.94, 0.94);
-      const targetY = clamp(intercept.y + this.shotHeight, 0.84, 1.70);
+      const targetY = clamp(intercept.y + this.shotHeight, state.rallyHits === 1 ? 0.62 : 0.84, 1.70);
 
       this.input.x += (targetX - this.input.x) * tracking;
       this.input.y += (targetY - this.input.y) * tracking;
@@ -183,7 +183,7 @@ export class TableTennisAI {
 
     // Keep this short downstroke active every frame, independently of the AI's
     // decision throttle. It tilts the blade upward at impact and lifts the serve.
-    if (intercept && state.rallyHits === 1 && intercept.time < 0.06) this.input.swingY = -8;
+    if (intercept && state.rallyHits === 1 && intercept.time < 0.04) this.input.swingY = 8;
     sim.setInput(1, this.input);
   }
 }
