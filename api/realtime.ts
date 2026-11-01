@@ -146,7 +146,8 @@ export function isValidPaddleInput(input: unknown): input is PaddleInput {
     const coordinate = value[key as "x" | "y" | "z"];
     return typeof coordinate === "number" && Number.isFinite(coordinate) && Math.abs(coordinate) < 3;
   }) && ["power", "slice", "serve"].every((key) => typeof value[key as "power" | "slice" | "serve"] === "boolean")
-    && (value.swingY === undefined || (typeof value.swingY === "number" && Number.isFinite(value.swingY) && Math.abs(value.swingY) <= 8));
+    && (value.swingY === undefined || (typeof value.swingY === "number" && Number.isFinite(value.swingY) && Math.abs(value.swingY) <= 8))
+    && (value.swingZ === undefined || (typeof value.swingZ === "number" && Number.isFinite(value.swingZ) && Math.abs(value.swingZ) <= 8));
 }
 
 export function attachRealtime(server: HttpServer): void {
