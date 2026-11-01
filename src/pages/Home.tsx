@@ -211,7 +211,7 @@ export default function Home() {
             {ui.state.phase === "serve" && ui.state.server === ui.ownSide && !waitingOnline && (
               <button className="serve-button" onClick={() => controller.current?.serve()}><span>ПОДАЧА</span><small>Пробел или нажми</small></button>
             )}
-            <div className="control-hint glass"><MousePointer2 size={15} /><span>Мышь — ракетка и вращение</span><i />W/S — выше/ниже · A/D — влево/вправо · клик — подача</div>
+            <div className="control-hint glass"><MousePointer2 size={15} /><span className="desktop-control-copy">Мышь — ракетка и вращение</span><span className="mobile-control-copy">Проведи пальцем — двигай ракетку · быстрый свайп — вращение</span><i /><span className="desktop-control-copy">W/S — выше/ниже · A/D — влево/вправо · клик — подача</span></div>
           </>
         )}
 
