@@ -35,6 +35,12 @@ const CODE_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
 const ROOM_IDLE_TIMEOUT_MS = 15 * 60 * 1000;
 export const RECONNECT_GRACE_MS = 30 * 1000;
 
+export function isReconnectExpired(disconnectedAt: number, now: number): boolean {
+  return Number.isFinite(disconnectedAt) && Number.isFinite(now)
+    ? now - disconnectedAt >= RECONNECT_GRACE_MS
+    : false;
+}
+
 /** A one-player lobby expires only after its connected client stops sending activity. */
 export function isWaitingRoomExpired(
   connectedPlayers: number,
@@ -204,7 +210,7 @@ export function attachRealtime(server: HttpServer): void {
         const side = room?.players.findIndex((player) => player !== null && tokensMatch(player.token, token)) ?? -1;
         const slot = room && side >= 0 ? room.players[side as Side] : null;
         if (!room || !slot || slot.disconnectedAt === null
-          || Date.now() - slot.disconnectedAt > RECONNECT_GRACE_MS) {
+          || isReconnectExpired(slot.disconnectedAt, Date.now())) {
           send(socket, { type: "error", message: "Сеанс больше недоступен. Создайте новую комнату" });
           return;
         }
@@ -298,7 +304,7 @@ export function attachRealtime(server: HttpServer): void {
       for (let side = 0 as Side; side <= 1; side = (side + 1) as Side) {
         const slot = room.players[side];
         if (slot && !slot.socket && slot.disconnectedAt !== null
-          && Date.now() - slot.disconnectedAt >= RECONNECT_GRACE_MS) {
+          && isReconnectExpired(slot.disconnectedAt, Date.now())) {
           room.players[side] = null;
           expiredSeat = true;
         }
