@@ -271,7 +271,9 @@ class SpinRallyGame {
         this.touchDragAnchor = projected;
       }
       this.input.pointerFresh = false;
-    } else if (this.input.pointerFresh) {
+    } else {
+      this.input.consumePointerStart();
+      if (this.input.pointerFresh) {
       const projected = this.scene.pointerToRacket(this.input.pointerX, this.input.pointerY, this.ownSide);
       if (projected) {
         this.humanTarget.x = projected.x;
@@ -279,6 +281,7 @@ class SpinRallyGame {
       }
       this.touchDragAnchor = null;
       this.input.pointerFresh = false;
+      }
     }
     if (this.input.x !== 0) this.humanTarget.x += this.input.x * dt * 1.85 * orientation;
     if (this.input.y !== 0) this.humanTarget.y += this.input.y * dt * 1.45;
