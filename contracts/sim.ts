@@ -49,6 +49,50 @@ const cross = (a: Vec3, b: Vec3): Vec3 => ({ x: a.y*b.z-a.z*b.y, y: a.z*b.x-a.x*
 const addScaled = (a: Vec3, b: Vec3, s: number): Vec3 => ({ x:a.x+b.x*s, y:a.y+b.y*s, z:a.z+b.z*s });
 const length = (v: Vec3) => Math.hypot(v.x,v.y,v.z);
 const normalize = (v: Vec3): Vec3 => { const l=length(v)||1; return {x:v.x/l,y:v.y/l,z:v.z/l}; };
+
+/** Shared deterministic free-flight integration used by both the server simulation and AI prediction. */
+export function integrateBallFlight(ball: Pick<BallState, "p" | "v" | "spin">, dt: number): void {
+  const speed = length(ball.v);
+  const magnus = cross(ball.spin, ball.v);
+  const dragScale = AIR_DRAG * speed;
+  ball.v.x += (-dragScale * ball.v.x + MAGNUS * magnus.x) * dt;
+  ball.v.y += (-GRAVITY - dragScale * ball.v.y + MAGNUS * magnus.y) * dt;
+  ball.v.z += (-dragScale * ball.v.z + MAGNUS * magnus.z) * dt;
+  ball.p.x += ball.v.x * dt;
+  ball.p.y += ball.v.y * dt;
+  ball.p.z += ball.v.z * dt;
+  const spinDamp = Math.max(0, 1 - AIR_SPIN_DECAY * dt);
+  ball.spin.x *= spinDamp;
+  ball.spin.y *= spinDamp;
+  ball.spin.z *= spinDamp;
+}
+
+/** Shared table-contact impulse; bounceCount is the count after this bounce. */
+export function applyTableBouncePhysics(
+  ball: Pick<BallState, "v" | "spin" | "serve">,
+  bounceCount: number,
+): void {
+  const normalVelocity = ball.v.y;
+  const normalImpulse = BALL_MASS * (1 + TABLE_RESTITUTION) * Math.abs(normalVelocity);
+  ball.v.y = Math.abs(normalVelocity) * TABLE_RESTITUTION;
+  const r = { x: 0, y: -BALL_RADIUS, z: 0 };
+  const rotational = cross(ball.spin, r);
+  const slip = { x: ball.v.x + rotational.x, y: 0, z: ball.v.z + rotational.z };
+  let jx = -BALL_MASS * slip.x * 0.72;
+  let jz = -BALL_MASS * slip.z * 0.72;
+  const maxJ = TABLE_FRICTION * normalImpulse;
+  const j = Math.hypot(jx, jz);
+  if (j > maxJ && j > 0) { jx *= maxJ / j; jz *= maxJ / j; }
+  ball.v.x += jx / BALL_MASS;
+  ball.v.z += jz / BALL_MASS;
+  const angular = cross(r, { x: jx, y: 0, z: jz });
+  ball.spin.x += angular.x / BALL_INERTIA;
+  ball.spin.z += angular.z / BALL_INERTIA;
+  ball.spin.x *= 0.91;
+  ball.spin.y *= 0.94;
+  ball.spin.z *= 0.91;
+  if (ball.serve && bounceCount === 1) ball.v.z *= 0.62;
+}
 function mulberry32(seed: number) { let a=seed>>>0; return () => { a|=0; a=(a+0x6d2b79f5)|0; let t=Math.imul(a^(a>>>15),1|a); t=(t+Math.imul(t^(t>>>7),61|t))^t; return ((t^(t>>>14))>>>0)/4294967296; }; }
 function makePaddle(side: Side): PaddleState { const z=sideSign(side)*1.48; return {x:0,y:1.16,z,vx:0,vy:0,vz:0,prevX:0,prevY:1.16,prevZ:z,cooldown:0,power:false,slice:false}; }
 
@@ -158,17 +202,7 @@ export class TableTennisSim {
 
   private stepBall(dt:number):void{
     const b=this.state.ball,prev={...b.p};
-    const speed=length(b.v);
-    // Quadratic drag and spin-dependent Magnus force. Spin is angular velocity in rad/s.
-    const dragScale=AIR_DRAG*speed;
-    const magnus=cross(b.spin,b.v);
-    b.v.x+=(-dragScale*b.v.x+MAGNUS*magnus.x)*dt;
-    b.v.y+=(-GRAVITY-dragScale*b.v.y+MAGNUS*magnus.y)*dt;
-    b.v.z+=(-dragScale*b.v.z+MAGNUS*magnus.z)*dt;
-    b.p.x+=b.v.x*dt;b.p.y+=b.v.y*dt;b.p.z+=b.v.z*dt;
-    const spinDamp=Math.max(0,1-AIR_SPIN_DECAY*dt);
-    b.spin.x*=spinDamp;b.spin.y*=spinDamp;b.spin.z*=spinDamp;
-
+    // Keep flight forces identical to the AI trajectory predictor.\n    integrateBallFlight(b, dt);\n
     if(this.crossedNet(prev.z,b.p.z)){
       const t=clamp(-prev.z/(b.p.z-prev.z),0,1),y=prev.y+(b.p.y-prev.y)*t,x=prev.x+(b.p.x-prev.x)*t;
       if(Math.abs(x)<TABLE.width/2+0.08&&y-BALL_RADIUS<TABLE.y+TABLE.netHeight&&y+BALL_RADIUS>TABLE.y){
@@ -191,25 +225,7 @@ export class TableTennisSim {
   }
 
   private applyTableImpulse():void{
-    const b=this.state.ball;
-    const normalVelocity=b.v.y;
-    const normalImpulse=BALL_MASS*(1+TABLE_RESTITUTION)*Math.abs(normalVelocity);
-    b.v.y=Math.abs(normalVelocity)*TABLE_RESTITUTION;
-    // Contact point is one radius below the centre; friction couples horizontal velocity and spin.
-    const r={x:0,y:-BALL_RADIUS,z:0};
-    const rotational=cross(b.spin,r);
-    const slip={x:b.v.x+rotational.x,y:0,z:b.v.z+rotational.z};
-    let jx=-BALL_MASS*slip.x*0.72,jz=-BALL_MASS*slip.z*0.72;
-    const maxJ=TABLE_FRICTION*normalImpulse,j=Math.hypot(jx,jz);
-    if(j>maxJ&&j>0){jx*=maxJ/j;jz*=maxJ/j;}
-    b.v.x+=jx/BALL_MASS;b.v.z+=jz/BALL_MASS;
-    const angular=cross(r,{x:jx,y:0,z:jz});
-    b.spin.x+=angular.x/BALL_INERTIA;b.spin.z+=angular.z/BALL_INERTIA;
-    // A little residual skid and spin loss at impact, not an artificial fixed trajectory.
-    b.spin.x*=0.91;b.spin.y*=0.94;b.spin.z*=0.91;
-    // On a serve, table friction must slow the forward skid enough for the
-    // receiver-side bounce to occur before the receiving racket plane.
-    if(b.serve&&b.bounces===1)b.v.z*=0.62;
+    applyTableBouncePhysics(this.state.ball, this.state.ball.bounces);
   }
 
   private crossedNet(a:number,b:number):boolean{return(a>0&&b<=0)||(a<0&&b>=0);}
