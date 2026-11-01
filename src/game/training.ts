@@ -17,3 +17,12 @@ export function getTrainingProgress(rallyHits: number, best: number): TrainingPr
     complete: safeCurrent >= TRAINING_TARGET,
   };
 }
+
+
+export const ACCURACY_TARGET = Object.freeze({ x: 0, z: -0.94, radius: 0.24 });
+
+/** Returns whether a landing point is inside the marked precision target. */
+export function isAccuracyTargetHit(point: { x: number; z: number } | undefined): boolean {
+  if (!point || !Number.isFinite(point.x) || !Number.isFinite(point.z)) return false;
+  return Math.hypot(point.x - ACCURACY_TARGET.x, point.z - ACCURACY_TARGET.z) <= ACCURACY_TARGET.radius;
+}
