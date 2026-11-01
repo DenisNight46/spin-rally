@@ -9,6 +9,36 @@ function cloneState(state: MatchState): MatchState {
   return structuredClone(state);
 }
 
+/** Interpolate continuous motion, but never blend across a point, serve, or game transition. */
+export function interpolateMatchStates(a: MatchState, b: MatchState, amount: number): MatchState {
+  const t = Math.max(0, Math.min(1, amount));
+  const discontinuity =
+    a.phase !== b.phase ||
+    a.eventId !== b.eventId ||
+    a.rallyHits !== b.rallyHits ||
+    a.server !== b.server ||
+    a.gameNumber !== b.gameNumber ||
+    a.scores[0] !== b.scores[0] ||
+    a.scores[1] !== b.scores[1] ||
+    a.games[0] !== b.games[0] ||
+    a.games[1] !== b.games[1];
+  if (discontinuity) return cloneState(t >= 1 ? b : a);
+
+  const out = cloneState(t < 0.5 ? a : b);
+  const mix = (x: number, y: number) => lerp(x, y, t);
+  for (const key of ["x", "y", "z"] as const) {
+    out.ball.p[key] = mix(a.ball.p[key], b.ball.p[key]);
+    out.ball.v[key] = mix(a.ball.v[key], b.ball.v[key]);
+    out.ball.spin[key] = mix(a.ball.spin[key], b.ball.spin[key]);
+  }
+  for (const side of [0, 1] as Side[]) {
+    for (const key of ["x", "y", "z", "vx", "vy", "vz"] as const) {
+      out.paddles[side][key] = mix(a.paddles[side][key], b.paddles[side][key]);
+    }
+  }
+  return out;
+}
+
 export class NetworkClient {
   private socket: WebSocket | null = null;
   private pingTimer = 0;
@@ -51,20 +81,8 @@ export class NetworkClient {
       if(this.snapshots[i].at>=target){a=this.snapshots[i-1];b=this.snapshots[i];break;}
     }
     if(a===b||b.at<=a.at)return cloneState(b.state);
-    const t=Math.max(0,Math.min(1,(target-a.at)/(b.at-a.at)));
-    const out=cloneState(t<0.5?a.state:b.state);
-    const mix=(x:number,y:number)=>lerp(x,y,t);
-    for(const key of ["x","y","z"] as const){
-      out.ball.p[key]=mix(a.state.ball.p[key],b.state.ball.p[key]);
-      out.ball.v[key]=mix(a.state.ball.v[key],b.state.ball.v[key]);
-      out.ball.spin[key]=mix(a.state.ball.spin[key],b.state.ball.spin[key]);
-    }
-    for(const side of [0,1] as Side[]){
-      for(const key of ["x","y","z","vx","vy","vz"] as const){
-        out.paddles[side][key]=mix(a.state.paddles[side][key],b.state.paddles[side][key]);
-      }
-    }
-    return out;
+    const t = Math.max(0, Math.min(1, (target - a.at) / (b.at - a.at)));
+    return interpolateMatchStates(a.state, b.state, t);
   }
 
   send(message:ClientMessage):void{if(this.socket?.readyState===WebSocket.OPEN)this.socket.send(JSON.stringify(message));}
