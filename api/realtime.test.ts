@@ -82,6 +82,8 @@ describe("online room protocol", () => {
     expect(isValidPaddleInput({ ...valid, swingY: 8 })).toBe(true);
     expect(isValidPaddleInput({ ...valid, swingY: Number.POSITIVE_INFINITY })).toBe(false);
     expect(isValidPaddleInput({ ...valid, swingY: 9 })).toBe(false);
+    expect(isValidPaddleInput({ ...valid, swingZ: 8 })).toBe(true);
+    expect(isValidPaddleInput({ ...valid, swingZ: Number.NaN })).toBe(false);
     expect(isValidPaddleInput(null)).toBe(false);
   });
   it("creates an invite room, joins a second player, exchanges state and ping, then reports disconnect", async () => {
