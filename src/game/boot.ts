@@ -365,7 +365,7 @@ class SpinRallyGame {
     }
   }
 
-  private trackAccuracyEvent(): void {\n    if (this.mode !== "accuracy") return;\n    const event = this.sim.state.event;\n    if (!event || event.type !== "bounce" || event.eventId === this.lastAccuracyEvent) return;\n    this.lastAccuracyEvent = this.sim.state.eventId;\n    if (event.side !== 0 || !event.p || event.p.z >= 0) return;\n    if (isAccuracyTargetHit(event.p)) {\n      this.accuracyScore += 1;\n      if (this.accuracyScore > this.accuracyBest) {\n        this.accuracyBest = this.accuracyScore;\n        accuracyRecord.set(this.accuracyBest);\n      }\n      this.sim.state.message = "Точно в цель! Отличный удар";\n    } else {\n      this.sim.state.message = "Мимо цели — меняй направление удара";\n    }\n  }\n\n  private processEvent(state: MatchState): void {
+  private trackAccuracyEvent(): void {\n    if (this.mode !== "accuracy") return;\n    const event = this.sim.state.event;\n    if (!event || event.type !== "bounce" || this.sim.state.eventId === this.lastAccuracyEvent) return;\n    this.lastAccuracyEvent = this.sim.state.eventId;\n    if (event.side !== 0 || !event.p || event.p.z >= 0) return;\n    if (isAccuracyTargetHit(event.p)) {\n      this.accuracyScore += 1;\n      if (this.accuracyScore > this.accuracyBest) {\n        this.accuracyBest = this.accuracyScore;\n        accuracyRecord.set(this.accuracyBest);\n      }\n      this.sim.state.message = "Точно в цель! Отличный удар";\n    } else {\n      this.sim.state.message = "Мимо цели — меняй направление удара";\n    }\n  }\n\n  private processEvent(state: MatchState): void {
     if (!state.event || state.eventId === this.lastEvent) return;
     this.lastEvent = state.eventId;
     this.scene.handleEvent(state.event, state.eventId);
