@@ -238,7 +238,7 @@ export function attachRealtime(server: HttpServer): void {
         if (currentSide >= 0) {
           socket.room = room;
           socket.side = currentSide as Side;
-          send(socket, { type: "joined", roomId: room.id, side: socket.side });
+          send(socket, { type: "joined", roomId: room.id, side: socket.side, token: room.players[currentSide as Side]!.token });
           broadcastState(room);
           return;
         }
@@ -258,7 +258,7 @@ export function attachRealtime(server: HttpServer): void {
         socket.side = side;
         socket.settings = settings;
         send(socket, { type: "joined", roomId: room.id, side, token });
-        if (room.players[0] && room.players[1]) room.sim.startMatch();
+        if (room.players[0]?.socket && room.players[1]?.socket) room.sim.startMatch();
         broadcastState(room);
         return;
       }
