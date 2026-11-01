@@ -97,11 +97,15 @@ export function predictRacketIntercept(
  * deliberately weaker so the racket never feels detached from the finger.
  */
 export function getContactAssistWeight(distance: number, time: number, touch: boolean): number {
-  if (!Number.isFinite(distance) || !Number.isFinite(time) || distance < 0 || time <= 0 || time >= 0.38 || distance >= 0.42) {
+  // Assistance begins early enough for a human reaction, but is bounded to a
+  // nearby legal intercept and fades completely outside the envelope.
+  const maxDistance = 0.58;
+  const maxTime = 0.52;
+  if (!Number.isFinite(distance) || !Number.isFinite(time) || distance < 0 || time <= 0 || time >= maxTime || distance >= maxDistance) {
     return 0;
   }
-  const strength = touch ? 0.14 : 0.24;
-  const proximity = 1 - distance / 0.42;
-  const urgency = 1 - time / 0.38;
+  const strength = touch ? 0.32 : 0.46;
+  const proximity = 1 - distance / maxDistance;
+  const urgency = 1 - time / maxTime;
   return strength * proximity * urgency;
 }
