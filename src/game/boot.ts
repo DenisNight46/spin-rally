@@ -55,7 +55,6 @@ class SpinRallyGame {
   private lastEvent = 0;
   private lastUi = 0;
   private sendClock = 0;
-  private servePulse = 0;
   private humanTarget = { x: 0, y: 1.17, z: 1.48 };
   private touchDragAnchor: { x: number; y: number } | null = null;
   private renderLast = performance.now();
@@ -107,7 +106,6 @@ class SpinRallyGame {
       createRoom: () => this.openRoom("create"),
       joinRoom: (roomId) => this.openRoom("join", roomId),
       rematch: () => this.rematch(),
-      serve: () => this.requestServe(),
       updateSettings: (settings) => this.updateSettings(settings),
       toggleMute: () => this.toggleMute(),
     };
@@ -228,14 +226,6 @@ class SpinRallyGame {
     this.notify();
   }
 
-  private requestServe(): void {
-    this.servePulse = 0.35;
-    const state = this.currentState();
-    if (this.mode === "online" && state.phase === "serve" && state.server === this.ownSide) {
-      this.network?.sendInput({ ...this.humanInput(0), serve: true });
-    }
-  }
-
   private rematch(): void {
     if (this.mode === "single") {
       this.startSingle(this.difficulty);
@@ -332,14 +322,13 @@ class SpinRallyGame {
     // near the baseline. This is intentionally forgiving, not a third axis
     // the player has to micromanage on a phone screen.
     this.humanTarget.z = sign * reachPlane;
-    this.servePulse = Math.max(0, this.servePulse - dt);
     return {
       x: this.humanTarget.x,
       y: this.humanTarget.y,
       z: this.humanTarget.z,
       power: false,
       slice: false,
-      serve: this.servePulse > 0 && state.phase === "serve" && state.server === this.ownSide,
+      serve: false,
     };
   }
 
@@ -351,11 +340,6 @@ class SpinRallyGame {
       return;
     }
     if (this.input.consume("Escape") || this.input.consume("KeyP")) this.togglePause();
-    if (this.input.consume("Space")) this.servePulse = 0.2;
-    if (this.input.consumePointerPress()) {
-      const state = this.currentState();
-      if (state.phase === "serve" && state.server === this.ownSide) this.requestServe();
-    }
     if (this.paused) return;
     const human = this.humanInput(dt);
     if (this.mode === "single" || this.mode === "training" || this.mode === "accuracy") {
