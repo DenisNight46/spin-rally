@@ -138,13 +138,21 @@ export function attachRealtime(server: HttpServer): void {
 
   wss.on("connection", (socket: ClientSocket) => {
     socket.on("message", (raw) => {
-      let message: ClientMessage;
+      let parsed: unknown;
       try {
-        message = JSON.parse(raw.toString()) as ClientMessage;
+        parsed = JSON.parse(raw.toString()) as unknown;
       } catch {
         send(socket, { type: "error", message: "Некорректное сообщение" });
         return;
       }
+      // JSON.parse also accepts null, arrays and primitives. Reject these before
+      // reading .type so a malformed packet cannot throw inside the WS event loop.
+      if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)
+        || typeof (parsed as { type?: unknown }).type !== "string") {
+        send(socket, { type: "error", message: "Некорректное сообщение" });
+        return;
+      }
+      const message = parsed as ClientMessage;
       if (message.type === "create") {
         if (socket.room) leave(socket);
         const id = makeCode();
@@ -214,7 +222,9 @@ export function attachRealtime(server: HttpServer): void {
       if (message.type === "ping") {
         if (socket.room) socket.room.lastActivityAt = Date.now();
         send(socket, { type: "pong", at: Number(message.at) || 0 });
+        return;
       }
+      send(socket, { type: "error", message: "Неизвестный тип сообщения" });
     });
     socket.on("close", () => leave(socket));
     socket.on("error", () => leave(socket));
