@@ -125,7 +125,7 @@ describe("shared racket trajectory prediction", () => {
     sim.state.phase = "rally";
     sim.state.ball = {
       p: { x: 0.1, y: 1.12, z: -0.32 },
-      v: { x: 0.15, y: 0.25, z: -3.2 },
+      v: { x: 0.15, y: 1.5, z: -3.2 },
       spin: { x: 0, y: 0, z: 0 },
       lastHitter: 0,
       bounces: 1,
