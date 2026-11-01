@@ -714,21 +714,24 @@ describe("network heartbeat health", () => {
 
 describe("near-miss contact assistance", () => {
   it("fades out for distant or non-imminent contacts", () => {
-    expect(getContactAssistWeight(0.43, 0.1, true)).toBe(0);
-    expect(getContactAssistWeight(0.1, 0.39, false)).toBe(0);
+    expect(getContactAssistWeight(0.59, 0.1, true)).toBe(0);
+    expect(getContactAssistWeight(0.1, 0.53, false)).toBe(0);
     expect(getContactAssistWeight(Number.NaN, 0.1, true)).toBe(0);
   });
 
   it("nudges only nearby targets and strengthens as contact approaches", () => {
     const far = getContactAssistWeight(0.3, 0.2, true);
     const near = getContactAssistWeight(0.05, 0.08, true);
-    expect(near).toBeGreaterThan(far);
+    expect(near).toBeGreaterThan(far * 2);
+    expect(near).toBeLessThanOrEqual(0.32);
+    expect(near).toBeGreaterThan(0.1);
     expect(far).toBeGreaterThan(0);
   });
 
-  it("keeps touch assistance weaker than desktop assistance", () => {
-    expect(getContactAssistWeight(0, 0.01, true)).toBeLessThan(
-      getContactAssistWeight(0, 0.01, false),
-    );
+  it("keeps touch assistance weaker than desktop assistance while making it perceptible", () => {
+    const touch = getContactAssistWeight(0, 0.01, true);
+    const desktop = getContactAssistWeight(0, 0.01, false);
+    expect(touch).toBeLessThan(desktop);
+    expect(touch).toBeGreaterThan(0.3);
   });
 });
