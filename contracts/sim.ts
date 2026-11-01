@@ -29,7 +29,7 @@ export interface MatchState {
 export interface PlayerSettings { name: string; kit: string; paddle: string; ball: string }
 export const DEFAULT_SETTINGS: PlayerSettings = { name: "Игрок", kit: "#27d3a2", paddle: "#ef476f", ball: "#f7fbff" };
 export const TABLE = Object.freeze({ width: 1.525, length: 2.74, y: 0.76, netHeight: 0.1525, ballRadius: 0.02 });
-export const DEFAULT_INPUT: PaddleInput = { x: 0, y: 1.16, z: 1.48, power: false, slice: false, serve: false, swingY: 0 };
+export const DEFAULT_INPUT: PaddleInput = { x: 0, y: 1.16, z: 1.48, power: false, slice: false, serve: false };
 
 const GRAVITY = 9.81;
 const BALL_MASS = 0.0027;
@@ -141,7 +141,7 @@ export class TableTennisSim {
   setInput(side: Side, input: PaddleInput): void {
     const target=this.inputs[side], sign=sideSign(side);
     target.x=clamp(Number.isFinite(input.x)?input.x:0,-0.98,0.98);
-    target.y=clamp(Number.isFinite(input.y)?input.y:1.16,0.84,1.7);
+    target.y=clamp(Number.isFinite(input.y)?input.y:1.16,input.swingY !== undefined ? 0.62 : 0.84,1.7);
     target.z=clamp(Number.isFinite(input.z)?input.z:sign*1.48,sign>0?1.38:-1.75,sign>0?1.75:-1.38);
     target.power=false; target.slice=false; target.serve=Boolean(input.serve);
     target.swingY=clamp(Number.isFinite(input.swingY) ? input.swingY as number : 0,-8,8);
