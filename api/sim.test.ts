@@ -283,6 +283,11 @@ describe("table tennis ball physics", () => {
 
     sim.setInput(1, { ...DEFAULT_INPUT, z: -1.48, swingY: -100 });
     expect(sim.getInput(1).swingY).toBe(-8);
+
+    sim.setInput(1, { ...DEFAULT_INPUT, z: -1.48, y: 0.7, swingY: 0 });
+    expect(sim.getInput(1).y).toBe(0.7);
+    sim.setInput(0, { ...DEFAULT_INPUT, y: 0.7 });
+    expect(sim.getInput(0).y).toBe(0.84);
   });
 
   it("fully resets paddles and queued inputs when a match is restarted", () => {
