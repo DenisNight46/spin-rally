@@ -209,10 +209,18 @@ export function attachRealtime(server: HttpServer): void {
         const token = typeof message.token === "string" ? message.token : "";
         const side = room?.players.findIndex((player) => player !== null && tokensMatch(player.token, token)) ?? -1;
         const slot = room && side >= 0 ? room.players[side as Side] : null;
-        if (!room || !slot || slot.disconnectedAt === null
-          || isReconnectExpired(slot.disconnectedAt, Date.now())) {
+        if (!room || !slot || (!slot.socket && (slot.disconnectedAt === null
+          || isReconnectExpired(slot.disconnectedAt, Date.now())))) {
           send(socket, { type: "error", message: "Сеанс больше недоступен. Создайте новую комнату" });
           return;
+        }
+        // A valid token may arrive before the old TCP connection is observed as
+        // closed by the server. Let the newest authenticated socket take over.
+        const previousSocket = slot.socket;
+        if (previousSocket && previousSocket !== socket) {
+          previousSocket.room = undefined;
+          previousSocket.side = undefined;
+          previousSocket.close(4002, "Session resumed elsewhere");
         }
         if (socket.room) leave(socket);
         slot.socket = socket;
