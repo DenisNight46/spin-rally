@@ -182,11 +182,12 @@ export class TableTennisAI {
       this.input.z = AI_RACKET_Z;
     }
 
-    // Keep this short upward stroke active every frame, independently of the AI's
-    // decision throttle. It tilts the blade upward at impact and lifts the serve.
-    if (intercept && state.rallyHits === 1 && intercept.time < 0.06) {
-      this.input.swingY = 8;
-      this.input.swingZ = 8;
+    // Every return needs a compact upward drive, not only the first receive.
+    // Without it, the collision can reverse the ball horizontally but leave it
+    // too low to clear the net. Scale the stroke slightly by level while keeping
+    // a safe minimum so even the beginner bot can sustain a legal rally.
+    if (intercept && intercept.time < 0.09) {
+      this.input.swingY = this.difficulty === "easy" ? 6.5 : this.difficulty === "normal" ? 7.2 : 8;
     }
     sim.setInput(1, this.input);
   }
