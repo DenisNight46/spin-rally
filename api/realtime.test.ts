@@ -118,7 +118,10 @@ describe("online room protocol", () => {
     host.send(JSON.stringify({ type: "join", roomId: hostJoined.roomId, settings: DEFAULT_SETTINGS }));
     const repeated = await repeatedJoin;
     expect(repeated.type).toBe("joined");
-    if (repeated.type === "joined") expect(repeated.side).toBe(0);
+    if (repeated.type === "joined") {
+      expect(repeated.side).toBe(0);
+      if (hostJoined.type === "joined") expect(repeated.token).toBe(hostJoined.token);
+    }
 
     const guest = await openSocket(url);
     const guestJoinedPromise = waitFor(guest, (m) => m.type === "joined");
