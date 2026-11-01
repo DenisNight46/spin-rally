@@ -46,6 +46,29 @@ describe("online snapshot interpolation", () => {
     expect(middle.paddles[0].x).toBeCloseTo(0);
   });
 
+  it("snaps instead of blending discrete ball-contact transitions", async () => {
+    const { interpolateMatchStates } = await import("../src/game/interpolation");
+    const base = new TableTennisSim(105);
+    base.startMatch();
+    base.state.phase = "rally";
+
+    const transitions: Array<(state: typeof base.state) => void> = [
+      (state) => { state.ball.bounces += 1; },
+      (state) => { state.ball.firstBounce = 0; },
+      (state) => { state.ball.serve = false; },
+      (state) => { state.ball.lastHitter = 1; },
+    ];
+
+    for (const transition of transitions) {
+      const before = structuredClone(base.state);
+      const after = structuredClone(base.state);
+      after.ball.p.x = 0.8;
+      transition(after);
+      const middle = interpolateMatchStates(before, after, 0.5);
+      expect(middle.ball.p.x).toBe(before.ball.p.x);
+    }
+  });
+
   it("does not interpolate through a point or phase transition", async () => {
     const { interpolateMatchStates } = await import("../src/game/interpolation");
     const first = new TableTennisSim(103);
