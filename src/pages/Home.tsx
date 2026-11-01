@@ -6,7 +6,7 @@ import type { Difficulty } from "@/game/ai";
 import { NATIONAL_TEAMS, NATIONAL_TEAM_FLAG_CODES, getNationalTeam, getTeamsByConfederation, type Confederation, type NationalTeam } from "@/game/teams";
 import { storage } from "@/game/storage";
 
-type Panel = "main" | "single" | "online" | "settings" | "help";
+type Panel = "main" | "single" | "training" | "online" | "settings" | "help";
 
 const DIFFICULTIES: Array<{ id: Difficulty; title: string; text: string; bars: number }> = [
   { id: "easy", title: "Новичок", text: "Медленная реакция и больше неточностей", bars: 1 },
@@ -111,6 +111,9 @@ export default function Home() {
                     <button className="mode-button primary" onClick={() => setPanel("single")}>
                       <span className="mode-icon"><Bot /></span><span><b>Одиночный матч</b><small>Три уровня сложности</small></span><Play size={18} />
                     </button>
+                    <button className="mode-button" onClick={() => setPanel("training")}>
+                      <span className="mode-icon"><Trophy /></span><span><b>Тренировка</b><small>Серия из 10 ударов подряд</small></span><Play size={18} />
+                    </button>
                     <button className="mode-button" onClick={() => setPanel("online")}>
                       <span className="mode-icon"><Users /></span><span><b>Онлайн с другом</b><small>Комната по короткому коду</small></span><Wifi size={18} />
                     </button>
@@ -132,6 +135,13 @@ export default function Home() {
                         </button>
                       ))}
                     </div>
+                  </>
+                )}
+                {panel === "training" && (
+                  <>
+                    <PanelTitle title="ТРЕНИРОВКА" subtitle="Отработай стабильность розыгрыша" onBack={() => setPanel("main")} />
+                    <div className="training-brief"><span className="training-target">10</span><div><b>Десять ударов подряд</b><small>Не спеши. Следи за высотой мяча и возвращай ракетку к точке следующего контакта.</small></div></div>
+                    <button className="accent-button wide" onClick={() => controller.current?.startTraining()}><Play size={17} />Начать упражнение</button>
                   </>
                 )}
                 {panel === "online" && (
@@ -188,12 +198,13 @@ export default function Home() {
               </div>
               <div className="game-actions">
                 <button className="icon-button glass" onClick={() => controller.current?.toggleMute()} aria-label="Звук">{ui.muted ? <VolumeX size={19} /> : <Volume2 size={19} />}</button>
-                {ui.mode === "single" && <button className="icon-button glass" onClick={() => controller.current?.togglePause()} aria-label="Пауза"><Pause size={19} /></button>}
+                {(ui.mode === "single" || ui.mode === "training") && <button className="icon-button glass" onClick={() => controller.current?.togglePause()} aria-label="Пауза"><Pause size={19} /></button>}
               </div>
             </div>
-            <div className="judge-call glass"><span className="judge-dot" /> <b>СУДЬЯ</b><span>{ui.state.message}</span></div>
+            <div className="judge-call glass"><span className="judge-dot" /> <b>{ui.mode === "training" ? "ТРЕНЕР" : "СУДЬЯ"}</b><span>{ui.state.message}</span></div>
+            {ui.mode === "training" && <div className="training-progress glass"><span>СЕРИЯ</span><b>{Math.min(10, ui.state.rallyHits)}<small>/10</small></b><i><span style={{ width: `${Math.min(100, ui.state.rallyHits * 10)}%` }} /></i>{ui.state.rallyHits >= 10 ? <strong>ЦЕЛЬ ДОСТИГНУТА</strong> : <small>Продержи мяч в игре</small>}</div>}
             <div className="match-meta glass">
-              {ui.mode === "online" ? <><Wifi size={14} /><span>{ui.roomId || "…"}</span><i />{ui.ping} мс</> : <><Bot size={14} />{DIFFICULTIES.find((item) => item.id === ui.difficulty)?.title}</>}
+              {ui.mode === "online" ? <><Wifi size={14} /><span>{ui.roomId || "…"}</span><i />{ui.ping} мс</> : ui.mode === "training" ? <><Trophy size={14} />УПРАЖНЕНИЕ · 10 УДАРОВ</> : <><Bot size={14} />{DIFFICULTIES.find((item) => item.id === ui.difficulty)?.title}</>}
             </div>
             {ui.state.phase === "serve" && ui.state.server === ui.ownSide && !waitingOnline && (
               <button className="serve-button" onClick={() => controller.current?.serve()}><span>ПОДАЧА</span><small>Пробел или нажми</small></button>
