@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it } from "vitest";
 import { createServer, type Server } from "node:http";
 import WebSocket from "ws";
-import { attachRealtime, isAllowedWebSocketOrigin, isValidPaddleInput, isWaitingRoomExpired } from "./realtime";
+import { attachRealtime, isAllowedWebSocketOrigin, isValidPaddleInput, isReconnectExpired, isWaitingRoomExpired } from "./realtime";
 import { DEFAULT_SETTINGS } from "../contracts/sim";
 import type { ServerMessage } from "../contracts/network";
 
@@ -56,6 +56,13 @@ describe("online room protocol", () => {
     expect(isWaitingRoomExpired(1, now, now + 15 * 60_000)).toBe(true);
     expect(isWaitingRoomExpired(2, now, now + 60 * 60_000)).toBe(false);
     expect(isWaitingRoomExpired(0, now, now + 15 * 60_000)).toBe(true);
+  });
+
+  it("expires a reserved reconnect seat only after the grace period", () => {
+    const disconnectedAt = 50_000;
+    expect(isReconnectExpired(disconnectedAt, disconnectedAt + 29_999)).toBe(false);
+    expect(isReconnectExpired(disconnectedAt, disconnectedAt + 30_000)).toBe(true);
+    expect(isReconnectExpired(Number.NaN, disconnectedAt + 30_000)).toBe(false);
   });
 
   it("accepts only same-host browser WebSocket origins", () => {
@@ -130,9 +137,33 @@ describe("online room protocol", () => {
     expect(pong.type).toBe("pong");
     if (pong.type === "pong") expect(pong.at).toBe(123);
 
+    const resumeToken = guestJoined.type === "joined" ? guestJoined.token : "";
     const disconnectedPromise = waitFor(host, (m) => m.type === "state" && !m.peerConnected);
     guest.close();
     const disconnected = await disconnectedPromise;
     expect(disconnected.type).toBe("state");
+
+    // The match and seat survive a short network interruption. Invalid tokens
+    // cannot claim the reserved seat; the original token restores the same side.
+    const returningGuest = await openSocket(url);
+    const rejectedResume = waitFor(returningGuest, (m) => m.type === "error");
+    returningGuest.send(JSON.stringify({ type: "resume", roomId: hostJoined.roomId, token: "invalid-token" }));
+    expect((await rejectedResume).type).toBe("error");
+
+    const resumedPromise = waitFor(returningGuest, (m) => m.type === "joined");
+    const hostReconnectedPromise = waitFor(host, (m) => m.type === "state" && m.peerConnected);
+    returningGuest.send(JSON.stringify({ type: "resume", roomId: hostJoined.roomId, token: resumeToken }));
+    const resumed = await resumedPromise;
+    expect(resumed.type).toBe("joined");
+    if (resumed.type === "joined") {
+      expect(resumed.side).toBe(1);
+      expect(resumed.token).toBe(resumeToken);
+    }
+    const hostReconnected = await hostReconnectedPromise;
+    expect(hostReconnected.type).toBe("state");
+    if (hostReconnected.type === "state") {
+      expect(hostReconnected.state.scores).toEqual([0, 0]);
+      expect(hostReconnected.state.phase).toBe("serve");
+    }
   });
 });
