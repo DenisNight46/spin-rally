@@ -87,6 +87,7 @@ export class TableTennisAI {
 
   reset(): void {
     this.think = 0;
+    this.clock = 0;
     this.serveDelay = 0;
     this.serveIndex = 0;
     this.serveTargetX = null;
@@ -97,6 +98,8 @@ export class TableTennisAI {
   }
 
   update(sim: TableTennisSim, dt: number): void {
+    if (!Number.isFinite(dt) || dt <= 0) return;
+    dt = Math.min(dt, 0.1);
     const level = LEVELS[this.difficulty];
     const state = sim.state;
     this.clock += dt;
