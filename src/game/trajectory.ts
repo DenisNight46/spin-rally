@@ -101,12 +101,12 @@ export function predictRacketIntercept(
 export function getContactAssistWeight(distance: number, time: number, touch: boolean): number {
   // Assistance begins early enough for a human reaction, but is bounded to a
   // nearby legal intercept and fades completely outside the envelope.
-  const maxDistance = 0.58;
-  const maxTime = 0.52;
+  const maxDistance = 0.38;
+  const maxTime = 0.34;
   if (!Number.isFinite(distance) || !Number.isFinite(time) || distance < 0 || time <= 0 || time >= maxTime || distance >= maxDistance) {
     return 0;
   }
-  const strength = touch ? 0.32 : 0.46;
+  const strength = touch ? 0.12 : 0.20;
   const proximity = 1 - distance / maxDistance;
   const urgency = 1 - time / maxTime;
   return strength * proximity * urgency;
