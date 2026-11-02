@@ -268,10 +268,12 @@ class SpinRallyGame {
     // Touch uses relative dragging: the racket starts where it already is and
     // follows the finger's movement. Mouse keeps absolute desktop positioning.
     if (this.input.pointerType === "touch") {
-      if (!this.input.pointerActive) this.touchDragAnchor = null;
+      // Preserve the actual pointer-down position separately from the latest
+      // sample: a fast swipe can begin, move and end between two game frames.
       if (this.input.consumePointerStart()) {
-        this.touchDragAnchor = this.scene.pointerToRacket(this.input.pointerX, this.input.pointerY, this.ownSide);
-      } else if (this.input.pointerFresh) {
+        this.touchDragAnchor = this.scene.pointerToRacket(this.input.pointerStartX, this.input.pointerStartY, this.ownSide);
+      }
+      if (this.input.pointerFresh) {
         const projected = this.scene.pointerToRacket(this.input.pointerX, this.input.pointerY, this.ownSide);
         if (projected && this.touchDragAnchor) {
           this.humanTarget.x += (projected.x - this.touchDragAnchor.x) * 0.9;
@@ -279,6 +281,8 @@ class SpinRallyGame {
         }
         this.touchDragAnchor = projected;
       }
+      // Apply the final pointer sample before dropping the drag anchor on release.
+      if (!this.input.pointerActive) this.touchDragAnchor = null;
       this.input.pointerFresh = false;
     } else {
       this.input.consumePointerStart();
