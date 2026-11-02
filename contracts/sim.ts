@@ -144,7 +144,10 @@ export class TableTennisSim {
     const target=this.inputs[side], sign=sideSign(side);
     target.x=clamp(Number.isFinite(input.x)?input.x:0,-0.98,0.98);
     target.y=clamp(Number.isFinite(input.y)?input.y:1.16,input.swingY !== undefined ? 0.62 : 0.84,1.7);
-    target.z=clamp(Number.isFinite(input.z)?input.z:sign*1.48,sign>0?1.38:-1.75,sign>0?1.75:-1.38);
+    // Let the racket travel forward into the court to meet short serves and
+    // drop shots. The old 1.38 m lower bound contradicted the intercept planner
+    // (0.72 m minimum), making those contacts physically impossible.
+    target.z=clamp(Number.isFinite(input.z)?input.z:sign*1.48,sign>0?0.62:-1.75,sign>0?1.75:-0.62);
     target.power=false; target.slice=false; target.serve=Boolean(input.serve);
     target.swingY=clamp(Number.isFinite(input.swingY) ? input.swingY as number : 0,-8,8);
     target.swingZ=clamp(Number.isFinite(input.swingZ) ? input.swingZ as number : 0,-8,8);
