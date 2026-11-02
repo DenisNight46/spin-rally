@@ -92,6 +92,7 @@ export class SceneView {
     this.createParticles();
     this.resize();
     window.addEventListener("resize", this.resize);
+    window.visualViewport?.addEventListener("resize", this.resize);
   }
 
   private buildArena(): void {
@@ -406,8 +407,8 @@ export class SceneView {
   }
 
   resize = (): void => {
-    const width = window.innerWidth;
-    const height = window.innerHeight;
+    const width = Math.max(1, this.renderer.domElement.clientWidth || window.visualViewport?.width || window.innerWidth);
+    const height = Math.max(1, this.renderer.domElement.clientHeight || window.visualViewport?.height || window.innerHeight);
     this.camera.aspect = width / Math.max(1, height);
     this.camera.fov = width < 700 ? 58 : 50;
     this.camera.updateProjectionMatrix();
@@ -425,6 +426,7 @@ export class SceneView {
 
   dispose(): void {
     window.removeEventListener("resize", this.resize);
+    window.visualViewport?.removeEventListener("resize", this.resize);
     const disposedTextures = new Set<THREE.Texture>();
     this.scene.traverse((object) => {
       if (object instanceof THREE.Mesh || object instanceof THREE.Line) {
