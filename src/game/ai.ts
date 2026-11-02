@@ -30,14 +30,20 @@ export function planAIShot(
   variation: number,
   incomingSpinX = 0,
 ): AIShotPlan {
-  const leadTime = clamp(interceptTime * 0.7, 0.08, 0.28);
-  const predictedOpponentX = clamp(opponentX + opponentVelocityX * leadTime, -0.98, 0.98);
+  const safeRallyHits = Number.isFinite(rallyHits) ? Math.max(0, Math.floor(rallyHits)) : 0;
+  const safeOpponentX = Number.isFinite(opponentX) ? clamp(opponentX, -0.98, 0.98) : 0;
+  const safeOpponentVelocityX = Number.isFinite(opponentVelocityX) ? clamp(opponentVelocityX, -10.5, 10.5) : 0;
+  const safeInterceptTime = Number.isFinite(interceptTime) ? clamp(interceptTime, 0, 10) : 0.08;
+  const safeVariation = Number.isFinite(variation) ? clamp(variation, -1, 1) : 0;
+  const safeIncomingSpinX = Number.isFinite(incomingSpinX) ? clamp(incomingSpinX, -100, 100) : 0;
+  const leadTime = clamp(safeInterceptTime * 0.7, 0.08, 0.28);
+  const predictedOpponentX = clamp(safeOpponentX + safeOpponentVelocityX * leadTime, -0.98, 0.98);
   const direction = difficulty === "easy"
     ? 0
     : difficulty === "normal"
-      ? (rallyHits % 2 === 0 ? 1 : -1)
+      ? (safeRallyHits % 2 === 0 ? 1 : -1)
       : Math.abs(predictedOpponentX) < 0.16
-        ? (variation >= 0 ? 1 : -1)
+        ? (safeVariation >= 0 ? 1 : -1)
         : predictedOpponentX > 0 ? -1 : 1;
   const precision = difficulty === "easy" ? 0 : difficulty === "normal" ? 0.05 : 0.075;
   // A controlled vertical brush changes the racket's tangential velocity and
@@ -46,22 +52,22 @@ export function planAIShot(
   // The first return after a serve needs a deliberate lifting stroke: a flat
   // collision can leave a descending ball below the table before it reaches
   // the server's half. Keep this safety stroke on every difficulty.
-  const firstReturn = rallyHits === 1;
+  const firstReturn = safeRallyHits === 1;
   const brushSign = firstReturn
     ? -1
     : difficulty === "easy"
       ? 0
       : difficulty === "normal"
-        ? (rallyHits % 2 === 0 ? 1 : -1)
-        : Math.abs(incomingSpinX) > 8
-          ? Math.sign(incomingSpinX)
+        ? (safeRallyHits % 2 === 0 ? 1 : -1)
+        : Math.abs(safeIncomingSpinX) > 8
+          ? Math.sign(safeIncomingSpinX)
           : variation >= 0 ? 1 : -1;
   const brush: AIShotPlan["brush"] = brushSign > 0 ? "up" : brushSign < 0 ? "down" : "flat";
   const brushAmplitude = firstReturn
     ? difficulty === "easy" ? 0.08 : difficulty === "normal" ? 0.095 : 0.11
     : difficulty === "easy" ? 0 : difficulty === "normal" ? 0.075 : 0.085;
   return {
-    offset: direction * precision * (0.72 + Math.abs(variation) * 0.28),
+    offset: direction * precision * (0.72 + Math.abs(safeVariation) * 0.28),
     height: brushSign * brushAmplitude,
     brush,
     predictedOpponentX,
