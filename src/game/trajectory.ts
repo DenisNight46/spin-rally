@@ -22,11 +22,15 @@ export function predictRacketIntercept(
   maxTime = 2,
   reachableOnly = false,
   planeDistance = 1.48,
+  movingPaddle?: { z: number; vz: number; targetZ: number },
 ): RacketIntercept | null {
   const sign = side === 0 ? 1 : -1;
   const reachPlane = Math.max(0.72, Math.min(1.48, planeDistance));
   const planeZ = sign * reachPlane;
   const ball = state.ball;
+  let paddleZ = movingPaddle && Number.isFinite(movingPaddle.z) ? movingPaddle.z : planeZ;
+  let paddleVZ = movingPaddle && Number.isFinite(movingPaddle.vz) ? movingPaddle.vz : 0;
+  const paddleTargetZ = movingPaddle && Number.isFinite(movingPaddle.targetZ) ? movingPaddle.targetZ : planeZ;
   if (ball.v.z * sign <= 0.05 || ball.p.z * sign >= reachPlane || !Number.isFinite(maxTime) || maxTime <= 0) {
     return null;
   }
@@ -41,6 +45,12 @@ export function predictRacketIntercept(
 
   for (let i = 0; i < Math.ceil(maxTime / dt); i += 1) {
     const previous = { ...p };
+    const previousPaddleZ = paddleZ;
+    if (movingPaddle) {
+      const desiredVZ = Math.max(-10.5, Math.min(10.5, (paddleTargetZ - paddleZ) * 15));
+      paddleVZ += Math.max(-70 * dt, Math.min(70 * dt, desiredVZ - paddleVZ));
+      paddleZ += paddleVZ * dt;
+    }
     const predictedBall = { p, v, spin, serve: isServe };
     integrateBallFlight(predictedBall, dt);
     p = predictedBall.p;
@@ -70,12 +80,14 @@ export function predictRacketIntercept(
     }
 
     const crossed = sign > 0
-      ? previous.z < planeZ && p.z >= planeZ
-      : previous.z > planeZ && p.z <= planeZ;
+      ? previous.z - previousPaddleZ <= 0 && p.z - paddleZ >= 0
+      : previous.z - previousPaddleZ >= 0 && p.z - paddleZ <= 0;
     if (crossed) {
       const requiredBounces = isServe ? 2 : 1;
       if (predictedBounces < requiredBounces) return null;
-      const fraction = Math.max(0, Math.min(1, (planeZ - previous.z) / (p.z - previous.z)));
+      const relativeStart = previous.z - previousPaddleZ;
+      const relativeEnd = p.z - paddleZ;
+      const fraction = Math.max(0, Math.min(1, relativeStart / (relativeStart - relativeEnd)));
       const intercept = {
         x: previous.x + (p.x - previous.x) * fraction,
         y: previous.y + (p.y - previous.y) * fraction,
