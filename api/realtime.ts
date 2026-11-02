@@ -70,8 +70,19 @@ function cleanSettings(value: unknown): PlayerSettings {
   };
 }
 
+const MAX_BUFFERED_STATE_BYTES = 256 * 1024;
+
+/** Drop obsolete render snapshots for slow clients instead of growing an unbounded WS send queue. */
+export function shouldDropStateSnapshot(bufferedAmount: number, limit = MAX_BUFFERED_STATE_BYTES): boolean {
+  return !Number.isFinite(bufferedAmount) || !Number.isFinite(limit) || limit < 0 || bufferedAmount > limit;
+}
+
 function send(socket: WebSocket, message: ServerMessage): void {
-  if (socket.readyState === WebSocket.OPEN) socket.send(JSON.stringify(message));
+  if (socket.readyState !== WebSocket.OPEN) return;
+  // State is replaceable: the next authoritative snapshot supersedes this one.
+  // Control messages (joined, errors, pong) are never discarded by this guard.
+  if (message.type === "state" && shouldDropStateSnapshot(socket.bufferedAmount)) return;
+  socket.send(JSON.stringify(message));
 }
 
 function players(room: Room): [PlayerSettings, PlayerSettings] {
