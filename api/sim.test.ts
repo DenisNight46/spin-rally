@@ -52,6 +52,42 @@ describe("forward racket reach", () => {
   });
 });
 
+describe("low forward racket contacts", () => {
+  it.each([0, 1] as const)("physically returns a low ball near the net on player side %s", (side) => {
+    const sim = new TableTennisSim(601 + side);
+    sim.startMatch();
+    sim.state.phase = "rally";
+    const sign = side === 0 ? 1 : -1;
+    const paddle = sim.state.paddles[side];
+    paddle.x = 0;
+    paddle.y = 0.84;
+    paddle.z = sign * 0.76;
+    paddle.prevX = 0;
+    paddle.prevY = 0.84;
+    paddle.prevZ = sign * 0.76;
+    sim.state.ball = {
+      p: { x: 0.01, y: 0.84, z: -sign * 0.82 },
+      v: { x: 0, y: 0.1, z: sign * 3.2 },
+      spin: { x: 0, y: 0, z: 0 },
+      lastHitter: side === 0 ? 1 : 0,
+      bounces: 1,
+      firstBounce: side,
+      serve: false,
+    };
+    sim.setInput(side, { ...DEFAULT_INPUT, x: 0, y: 0.84, z: sign * 0.76 });
+
+    let returned = false;
+    for (let frame = 0; frame < 40 && !returned; frame += 1) {
+      sim.step(1 / 240);
+      returned = sim.state.event?.type === "hit" && sim.state.event.side === side;
+    }
+
+    expect(returned, `low forward contact failed on side ${side}; phase=${sim.state.phase}, ball=${JSON.stringify(sim.state.ball)}, paddle=${JSON.stringify(sim.state.paddles[side])}`).toBe(true);
+    expect(sim.state.ball.lastHitter).toBe(side);
+    expect(sim.state.ball.v.z * sign).toBeLessThan(0);
+  });
+});
+
 describe("online snapshot interpolation", () => {
   it("smooths continuous ball and paddle motion", async () => {
     const { interpolateMatchStates } = await import("../src/game/interpolation");
