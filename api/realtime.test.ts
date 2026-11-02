@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it } from "vitest";
 import { createServer, type Server } from "node:http";
 import WebSocket from "ws";
-import { attachRealtime, isAllowedWebSocketOrigin, isValidPaddleInput, isReconnectExpired, isWaitingRoomExpired } from "./realtime";
+import { attachRealtime, isAllowedWebSocketOrigin, isValidPaddleInput, isReconnectExpired, isWaitingRoomExpired, shouldDropStateSnapshot } from "./realtime";
 import { DEFAULT_SETTINGS } from "../contracts/sim";
 import type { ServerMessage } from "../contracts/network";
 
@@ -48,6 +48,17 @@ async function openSocket(url: string): Promise<WebSocket> {
   });
   return socket;
 }
+
+describe("realtime backpressure", () => {
+  it("drops replaceable snapshots only after the bounded send queue is exceeded", () => {
+    const limit = 256 * 1024;
+    expect(shouldDropStateSnapshot(0)).toBe(false);
+    expect(shouldDropStateSnapshot(limit)).toBe(false);
+    expect(shouldDropStateSnapshot(limit + 1)).toBe(true);
+    expect(shouldDropStateSnapshot(Number.NaN)).toBe(true);
+    expect(shouldDropStateSnapshot(1, -1)).toBe(true);
+  });
+});
 
 describe("online room protocol", () => {
   it("expires abandoned one-player lobbies after 15 minutes but keeps active rooms alive", () => {
