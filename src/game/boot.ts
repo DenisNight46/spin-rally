@@ -307,7 +307,7 @@ class SpinRallyGame {
     // nearby target toward a legal contact point; touch receives a lower cap
     // so the racket remains firmly under the player's finger.
     if (state.phase === "rally" && state.ball.v.z * sign > 0.15) {
-      const intercept = predictRacketIntercept(state, this.ownSide, 0.52, true, reachPlane);
+      const intercept = predictRacketIntercept(state, this.ownSide, 0.52, true, reachPlane, { z: state.paddles[this.ownSide].z, vz: state.paddles[this.ownSide].vz, targetZ: sign * reachPlane });
       if (intercept) {
         const distance = Math.hypot(intercept.x - this.humanTarget.x, intercept.y - this.humanTarget.y);
         const assist = getContactAssistWeight(distance, intercept.time, this.input.pointerType === "touch");
