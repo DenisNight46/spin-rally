@@ -432,8 +432,8 @@ describe("AI tactical shot planning", () => {
 
   it("keeps beginner returns central and alternates the club player's placement", () => {
     const easy = planAIShot("easy", 2, 0.8, 5, 0.3, -0.7);
-    const normalLeft = planAIShot("normal", 2, 0.8, 5, 0.3, -0.7);
-    const normalRight = planAIShot("normal", 3, 0.8, 5, 0.3, -0.7);
+    const normalLeft = planAIShot("normal", 2, 0.8, 0, 0.3, -0.7);
+    const normalRight = planAIShot("normal", 3, 0.8, 0, 0.3, -0.7);
 
     expect(easy.offset).toBe(0);
     expect(easy.brush).toBe("flat");
