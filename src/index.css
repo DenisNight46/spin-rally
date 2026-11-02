@@ -300,3 +300,25 @@ kbd { padding: 3px 6px; border: 1px solid #395254; border-bottom-width: 2px; bor
   .match-meta { top: auto; bottom: max(8px, env(safe-area-inset-bottom)); }
   .control-hint { display: none; }
 }
+
+
+/* Reliable viewport sizing when the browser enters or exits fullscreen. */
+#game-root:fullscreen,
+#game-root:-webkit-full-screen {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  height: 100dvh;
+  min-height: 0;
+  padding: 0;
+  overflow: hidden;
+  background: #07151d;
+}
+#game-root:fullscreen #game-canvas,
+#game-root:-webkit-full-screen #game-canvas,
+#game-root:fullscreen #ui-overlay,
+#game-root:-webkit-full-screen #ui-overlay {
+  width: 100%;
+  height: 100%;
+}
