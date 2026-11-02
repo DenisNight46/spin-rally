@@ -17,7 +17,7 @@ button, input, .glass { -webkit-tap-highlight-color: transparent; }
 button { touch-action: manipulation; }
 button { color: inherit; cursor: pointer; }
 button:focus-visible, input:focus-visible { outline: 2px solid var(--mint); outline-offset: 3px; }
-#game-root { position: fixed; inset: 0; width: 100%; height: var(--tg-viewport-height, 100dvh); min-height: 100%; overflow: hidden; padding: var(--tg-safe-top, 0px) var(--tg-safe-right, 0px) var(--tg-safe-bottom, 0px) var(--tg-safe-left, 0px); }
+#game-root { position: fixed; inset: 0; width: 100%; height: var(--tg-viewport-height, 100dvh); min-height: 0; overflow: hidden; padding: var(--tg-safe-top, 0px) var(--tg-safe-right, 0px) var(--tg-safe-bottom, 0px) var(--tg-safe-left, 0px); }
 #game-canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; touch-action: none; }
 #ui-overlay { position: absolute; inset: 0; pointer-events: none; user-select: none; touch-action: none; }
 #ui-overlay > * { pointer-events: auto; }
@@ -186,7 +186,10 @@ kbd { padding: 3px 6px; border: 1px solid #395254; border-bottom-width: 2px; bor
   .menu-row { margin-top: 10px; }
   .sub-button { min-height: 54px; flex-direction: row; }
   .quick-start, .title-footer { display: none; }
-  .game-topbar { top: max(10px, env(safe-area-inset-top)); left: max(10px, env(safe-area-inset-left)); right: max(10px, env(safe-area-inset-right)); grid-template-columns: 38px 1fr 38px; gap: 7px; }
+  .game-topbar { top: max(10px, env(safe-area-inset-top)); left: max(10px, env(safe-area-inset-left)); right: max(10px, env(safe-area-inset-right)); grid-template-columns: 38px minmax(0, 1fr) auto; gap: 7px; }
+  .scoreboard { min-width: 0; }
+  .game-actions { gap: 4px; }
+  .game-actions .icon-button { flex: 0 0 34px; width: 34px; height: 36px; }
   .game-topbar > .icon-button, .game-actions .icon-button { width: 36px; height: 36px; }
   /* Keep fullscreen accessible in Telegram Mini Apps on phones. */
   .scoreboard { padding: 8px 9px; border-radius: 13px; grid-template-columns: 1fr 38px 1fr; }
