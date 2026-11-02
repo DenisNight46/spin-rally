@@ -81,7 +81,7 @@ export function predictRacketIntercept(
         y: previous.y + (p.y - previous.y) * fraction,
         time: (i + fraction) * dt,
       };
-      if (reachableOnly && (intercept.y < 0.84 || intercept.y > 1.72 || Math.abs(intercept.x) > 1.08)) {
+      if (reachableOnly && (intercept.y < 0.62 || intercept.y > 1.72 || Math.abs(intercept.x) > 1.08)) {
         return null;
       }
       return intercept;
