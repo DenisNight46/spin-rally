@@ -168,6 +168,33 @@ describe("arcade spin readability", () => {
   });
 });
 
+describe("moving racket trajectory prediction", () => {
+  it("predicts contact against the racket's accelerated forward movement", () => {
+    const sim = new TableTennisSim(110);
+    sim.startMatch();
+    sim.state.phase = "rally";
+    sim.state.ball = {
+      p: { x: 0, y: 1.12, z: -0.45 },
+      v: { x: 0, y: 0.1, z: -2.8 },
+      spin: { x: 0, y: 0, z: 0 },
+      lastHitter: 0,
+      bounces: 1,
+      firstBounce: 0,
+      serve: false,
+    };
+    const paddle = sim.state.paddles[1];
+    paddle.z = -1.48;
+    paddle.vz = 0;
+    const fixed = predictRacketIntercept(sim.state, 1, 2, false, 1.0);
+    const moving = predictRacketIntercept(sim.state, 1, 2, false, 1.0, {
+      z: paddle.z, vz: paddle.vz, targetZ: -1.0,
+    });
+    expect(fixed).not.toBeNull();
+    expect(moving).not.toBeNull();
+    expect(moving!.time).toBeLessThan(fixed!.time);
+  });
+});
+
 describe("shared racket trajectory prediction", () => {
   it("is symmetric for both racket planes", () => {
     const sim = new TableTennisSim(107);
