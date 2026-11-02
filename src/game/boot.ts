@@ -317,7 +317,7 @@ class SpinRallyGame {
     }
 
     this.humanTarget.x = Math.max(-0.98, Math.min(0.98, this.humanTarget.x));
-    this.humanTarget.y = Math.max(0.84, Math.min(1.7, this.humanTarget.y));
+    this.humanTarget.y = Math.max(0.66, Math.min(1.7, this.humanTarget.y));
     // Depth is assisted automatically for short balls; normal rallies stay
     // near the baseline. This is intentionally forgiving, not a third axis
     // the player has to micromanage on a phone screen.
