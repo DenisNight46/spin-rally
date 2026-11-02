@@ -61,7 +61,7 @@ export function planAIShot(
         ? (safeRallyHits % 2 === 0 ? 1 : -1)
         : Math.abs(safeIncomingSpinX) > 8
           ? Math.sign(safeIncomingSpinX)
-          : variation >= 0 ? 1 : -1;
+          : safeVariation >= 0 ? 1 : -1;
   const brush: AIShotPlan["brush"] = brushSign > 0 ? "up" : brushSign < 0 ? "down" : "flat";
   const brushAmplitude = firstReturn
     ? difficulty === "easy" ? 0.08 : difficulty === "normal" ? 0.095 : 0.11
