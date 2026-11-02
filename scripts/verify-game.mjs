@@ -150,12 +150,15 @@ const shot = await page.evaluate((id) => {
 switch (shot.kind) {
   case "no-canvas":
     fail(
-      `no element with id="${CANVAS_ID}" on the page, so the render check could not run.\n` +
-      `  This script looks up document.getElementById("${CANVAS_ID}"); the template renders that id from src/pages/Home.tsx.\n` +
-      (shot.others.length
-        ? `  Canvases that do exist: ${shot.others.join(", ")} — you renamed the id.\n`
-        : `  There is no <canvas> on the page at all — did startGame() run, or did the page throw before mounting?\n`) +
-      `  Fix: keep id="${CANVAS_ID}" in the page, or change CANVAS_ID at the top of this script to the id you use.`
+      `no element with id="${CANVAS_ID}" on the page, so the render check could not run.\\n` +
+      `  URL: ${page.url()}\\n` +
+      `  #root text: ${await page.locator("#root").innerText().catch(() => "(missing or unreadable)") }\\n` +
+      `  #root HTML: ${(await page.locator("#root").innerHTML().catch(() => "(missing or unreadable)")).slice(0, 1600)}\\n` +
+      `  Browser errors: ${consoleErrors.slice(0, 8).join(" | ") || "(none)"}\\n` +
+      `  Failed requests: ${failedRequests.slice(0, 8).join(" | ") || "(none)"}\\n` +
+      `  HTTP errors: ${badResponses.slice(0, 8).join(" | ") || "(none)"}\\n` +
+      `  Other canvases: ${shot.others.join(", ") || "(none)"}\\n` +
+      `  Fix the first runtime/load error; do not bypass the canvas assertion.`
     );
     break;
   case "not-canvas":
