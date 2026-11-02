@@ -45,10 +45,18 @@ export default function Home() {
   const toggleFullscreen = async () => {
     try {
       const telegram = window.Telegram?.WebApp;
-      if (telegram?.requestFullscreen) {
-        if (document.fullscreenElement) await document.exitFullscreen();
-        else await telegram.requestFullscreen();
+      if (telegram?.isFullscreen && telegram.exitFullscreen) {
+        await telegram.exitFullscreen();
         return;
+      }
+      if (telegram?.requestFullscreen) {
+        try {
+          await telegram.requestFullscreen();
+          return;
+        } catch {
+          // Fall through to the browser fullscreen API when the Telegram
+          // client exposes the method but does not support it on this device.
+        }
       }
       if (document.fullscreenElement) {
         await document.exitFullscreen();
