@@ -103,8 +103,8 @@ if (env.isProduction) {
   serveStaticFiles(app);
 
   const port = parseInt(process.env.PORT || "3000");
-  const server = serve({ fetch: app.fetch, port }, () => {
-    log.info(`Server running on http://localhost:${port}/`);
+  const server = serve({ fetch: app.fetch, port, hostname: "0.0.0.0" }, () => {
+    log.info(`Server listening on 0.0.0.0:${port}`);
   });
   attachRealtime(server as unknown as HttpServer);
 }
