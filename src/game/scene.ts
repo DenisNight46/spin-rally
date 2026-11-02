@@ -391,7 +391,7 @@ export class SceneView {
     if (!this.pointerRaycaster.ray.intersectPlane(this.pointerPlane, this.pointerPoint)) return null;
     return {
       x: THREE.MathUtils.clamp(this.pointerPoint.x, -0.98, 0.98),
-      y: THREE.MathUtils.clamp(this.pointerPoint.y, 0.84, 1.7),
+      y: THREE.MathUtils.clamp(this.pointerPoint.y, 0.66, 1.7),
     };
   }
 
