@@ -169,6 +169,41 @@ describe("arcade spin readability", () => {
 });
 
 describe("moving racket trajectory prediction", () => {
+  it("mirrors moving-racket intercepts across both ends of the table", () => {
+    const sim = new TableTennisSim(111);
+    sim.startMatch();
+    sim.state.phase = "rally";
+    sim.state.ball = {
+      p: { x: 0.14, y: 1.12, z: -0.45 },
+      v: { x: -0.18, y: 0.1, z: -2.8 },
+      spin: { x: 0, y: 0, z: 0 },
+      lastHitter: 0,
+      bounces: 1,
+      firstBounce: 0,
+      serve: false,
+    };
+    const left = predictRacketIntercept(sim.state, 1, 2, false, 1.0, {
+      z: -1.48, vz: 0.4, targetZ: -1.0,
+    });
+    const mirrored = structuredClone(sim.state);
+    mirrored.ball.p.x *= -1;
+    mirrored.ball.p.z *= -1;
+    mirrored.ball.v.x *= -1;
+    mirrored.ball.v.z *= -1;
+    mirrored.ball.lastHitter = 1;
+    mirrored.ball.firstBounce = 1;
+    const right = predictRacketIntercept(mirrored, 0, 2, false, 1.0, {
+      z: 1.48, vz: -0.4, targetZ: 1.0,
+    });
+
+    expect(left).not.toBeNull();
+    expect(right).not.toBeNull();
+    expect(right!.x).toBeCloseTo(-left!.x, 5);
+    expect(right!.y).toBeCloseTo(left!.y, 5);
+    expect(right!.time).toBeCloseTo(left!.time, 5);
+  });
+
+  it("predicts contact against the racket's accelerated forward movement", () => {
   it("predicts contact against the racket's accelerated forward movement", () => {
     const sim = new TableTennisSim(110);
     sim.startMatch();
