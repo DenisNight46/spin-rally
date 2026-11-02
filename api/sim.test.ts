@@ -28,6 +28,30 @@ function racketImpact(targetX: number, targetY: number) {
   return { spin: sim.state.ball.spin, vy: sim.state.ball.v.y };
 }
 
+describe("forward racket reach", () => {
+  it("allows the player racket to advance beyond the old baseline lock", () => {
+    const sim = new TableTennisSim(501);
+    sim.startMatch();
+    sim.setInput(0, { ...DEFAULT_INPUT, z: 0.72 });
+    expect(sim.getInput(0).z).toBeCloseTo(0.72);
+
+    for (let frame = 0; frame < 72; frame += 1) sim.step(1 / 240);
+    expect(sim.state.paddles[0].z).toBeLessThan(1.38);
+    expect(sim.state.paddles[0].z).toBeGreaterThan(0.62);
+  });
+
+  it("allows the opposite-side racket to advance symmetrically", () => {
+    const sim = new TableTennisSim(502);
+    sim.startMatch();
+    sim.setInput(1, { ...DEFAULT_INPUT, z: -0.72 });
+    expect(sim.getInput(1).z).toBeCloseTo(-0.72);
+
+    for (let frame = 0; frame < 72; frame += 1) sim.step(1 / 240);
+    expect(sim.state.paddles[1].z).toBeGreaterThan(-1.38);
+    expect(sim.state.paddles[1].z).toBeLessThan(-0.62);
+  });
+});
+
 describe("online snapshot interpolation", () => {
   it("smooths continuous ball and paddle motion", async () => {
     const { interpolateMatchStates } = await import("../src/game/interpolation");
