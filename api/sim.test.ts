@@ -25,7 +25,7 @@ function racketImpact(targetX: number, targetY: number) {
     sim.step(1 / 240);
     if (sim.state.event?.type === "hit") break;
   }
-  return sim.state.ball.spin;
+  return { spin: sim.state.ball.spin, vy: sim.state.ball.v.y };
 }
 
 describe("online snapshot interpolation", () => {
@@ -462,20 +462,21 @@ describe("table tennis ball physics", () => {
   it("generates topspin from an upward racket swing without a modifier key", () => {
     const still = racketImpact(0, 1.12);
     const upward = racketImpact(0, 1.7);
-    expect(Math.abs(upward.x)).toBeGreaterThan(Math.abs(still.x) + 30);
+    expect(Math.abs(upward.spin.x)).toBeGreaterThan(Math.abs(still.spin.x) + 30);
   });
 
-  it("keeps racket-assisted returns below an arcade sky-lob ceiling", () => {
+  it("caps vertical launch speed on strong upward racket drives", () => {
     const still = racketImpact(0, 1.12);
     const upward = racketImpact(0, 1.7);
-    expect(Number.isFinite(still.x)).toBe(true);
-    expect(Number.isFinite(upward.x)).toBe(true);
+    expect(Number.isFinite(still.vy)).toBe(true);
+    expect(Number.isFinite(upward.vy)).toBe(true);
+    expect(upward.vy).toBeLessThanOrEqual(4.6);
   });
 
   it("generates sidespin from horizontal racket movement", () => {
     const still = racketImpact(0, 1.12);
     const sideways = racketImpact(0.98, 1.12);
-    expect(Math.abs(sideways.y)).toBeGreaterThan(Math.abs(still.y) + 10);
+    expect(Math.abs(sideways.spin.y)).toBeGreaterThan(Math.abs(still.spin.y) + 10);
   });
 
   it("starts a serve from an upward racket swing without a serve button input", () => {
