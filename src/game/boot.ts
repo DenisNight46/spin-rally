@@ -6,7 +6,7 @@ import { TableTennisAI, type Difficulty } from "./ai";
 import { NetworkClient } from "./network";
 import { accuracyRecord, storage, trainingRecord } from "./storage";
 import { getTrainingProgress, isAccuracyTargetHit } from "./training";
-import { getContactAssistWeight, predictRacketIntercept } from "./trajectory";
+
 import type { GameController, GameMode, GameUIState, NetworkStatus } from "./types";
 import type { ServerMessage } from "@contracts/network";
 import { DEFAULT_SETTINGS, TableTennisSim, type MatchState, type PaddleInput, type PlayerSettings, type Side } from "@contracts/sim";
@@ -307,18 +307,8 @@ class SpinRallyGame {
       ? Math.max(0.72, Math.min(1.48, ballDepth + 0.48))
       : 1.48;
 
-    // Soft contact assistance works on mouse and touch. It only nudges a
-    // nearby target toward a legal contact point; touch receives a lower cap
-    // so the racket remains firmly under the player's finger.
-    if (state.phase === "rally" && state.ball.v.z * sign > 0.15) {
-      const intercept = predictRacketIntercept(state, this.ownSide, 0.52, true, reachPlane, { z: state.paddles[this.ownSide].z, vz: state.paddles[this.ownSide].vz, targetZ: sign * reachPlane });
-      if (intercept) {
-        const distance = Math.hypot(intercept.x - this.humanTarget.x, intercept.y - this.humanTarget.y);
-        const assist = getContactAssistWeight(distance, intercept.time, this.input.pointerType === "touch");
-        this.humanTarget.x += (intercept.x - this.humanTarget.x) * assist;
-        this.humanTarget.y += (intercept.y - this.humanTarget.y) * assist;
-      }
-    }
+    // No automatic aim correction: the player must place the racket under the ball.
+    // Depth positioning remains assisted so short balls are physically reachable.
 
     this.humanTarget.x = Math.max(-0.98, Math.min(0.98, this.humanTarget.x));
     this.humanTarget.y = Math.max(0.66, Math.min(1.7, this.humanTarget.y));
