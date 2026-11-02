@@ -287,6 +287,33 @@ describe("AI lifecycle safety", () => {
   });
 });
 
+describe("AI tactical input safety", () => {
+  it("keeps every planned shot finite and within legal bounds for invalid inputs", () => {
+    const plan = planAIShot(
+      "hard",
+      Number.NaN,
+      Number.POSITIVE_INFINITY,
+      Number.NaN,
+      Number.POSITIVE_INFINITY,
+      Number.NaN,
+      Number.NEGATIVE_INFINITY,
+    );
+
+    expect(Object.values(plan).filter((value): value is number => typeof value === "number").every(Number.isFinite)).toBe(true);
+    expect(plan.predictedOpponentX).toBe(0);
+    expect(Math.abs(plan.offset)).toBeLessThanOrEqual(0.075);
+    expect(Math.abs(plan.height)).toBeLessThanOrEqual(0.085);
+  });
+
+  it("clamps extreme but finite tactical inputs before planning", () => {
+    const plan = planAIShot("hard", 1_000_000, 500, -500, 500, 500, 500);
+    expect(plan.predictedOpponentX).toBeGreaterThanOrEqual(-0.98);
+    expect(plan.predictedOpponentX).toBeLessThanOrEqual(0.98);
+    expect(Math.abs(plan.offset)).toBeLessThanOrEqual(0.075);
+    expect(Math.abs(plan.height)).toBeLessThanOrEqual(0.11);
+  });
+});
+
 describe("AI tactical shot planning", () => {
   it("anticipates lateral movement and attacks the newly exposed side", () => {
     const stationaryPlan = planAIShot("hard", 0, -0.55, 0, 0.25, 0.5);
