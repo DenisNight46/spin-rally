@@ -12,6 +12,8 @@ export class Input {
   y = 0;
   pointerX = 0;
   pointerY = 0;
+  pointerStartX = 0;
+  pointerStartY = 0;
   pointerFresh = false;
   pointerType: string | null = null;
   pointerActive = false;
@@ -53,6 +55,8 @@ export class Input {
       this.pointerPressed = true;
       canvas.setPointerCapture?.(event.pointerId);
       this.updatePointer(event);
+      this.pointerStartX = this.pointerX;
+      this.pointerStartY = this.pointerY;
     });
     on<PointerEvent>(canvas, "pointermove", (event) => {
       if ((this.activePointer === null && event.pointerType === "mouse") || this.activePointer === event.pointerId) this.updatePointer(event);
