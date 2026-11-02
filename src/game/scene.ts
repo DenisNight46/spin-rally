@@ -93,6 +93,7 @@ export class SceneView {
     this.resize();
     window.addEventListener("resize", this.resize);
     window.visualViewport?.addEventListener("resize", this.resize);
+    document.addEventListener("fullscreenchange", this.resize);
   }
 
   private buildArena(): void {
@@ -427,6 +428,7 @@ export class SceneView {
   dispose(): void {
     window.removeEventListener("resize", this.resize);
     window.visualViewport?.removeEventListener("resize", this.resize);
+    document.removeEventListener("fullscreenchange", this.resize);
     const disposedTextures = new Set<THREE.Texture>();
     this.scene.traverse((object) => {
       if (object instanceof THREE.Mesh || object instanceof THREE.Line) {
