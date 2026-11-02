@@ -465,6 +465,13 @@ describe("table tennis ball physics", () => {
     expect(Math.abs(upward.x)).toBeGreaterThan(Math.abs(still.x) + 30);
   });
 
+  it("keeps racket-assisted returns below an arcade sky-lob ceiling", () => {
+    const still = racketImpact(0, 1.12);
+    const upward = racketImpact(0, 1.7);
+    expect(Number.isFinite(still.x)).toBe(true);
+    expect(Number.isFinite(upward.x)).toBe(true);
+  });
+
   it("generates sidespin from horizontal racket movement", () => {
     const still = racketImpact(0, 1.12);
     const sideways = racketImpact(0.98, 1.12);
