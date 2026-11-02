@@ -1,6 +1,8 @@
 type TelegramWebApp = {
   ready: () => void;
   expand: () => void;
+  requestFullscreen?: () => Promise<void> | void;
+  exitFullscreen?: () => Promise<void> | void;
   setHeaderColor?: (color: string) => void;
   setBackgroundColor?: (color: string) => void;
   viewportHeight?: number;
