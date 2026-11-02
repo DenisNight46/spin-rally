@@ -41,7 +41,9 @@ export function planAIShot(
   const direction = difficulty === "easy"
     ? 0
     : difficulty === "normal"
-      ? (safeRallyHits % 2 === 0 ? 1 : -1)
+      ? Math.abs(safeOpponentVelocityX) > 1.4
+        ? (predictedOpponentX > 0.12 ? -1 : predictedOpponentX < -0.12 ? 1 : safeOpponentVelocityX > 0 ? -1 : 1)
+        : (safeRallyHits % 2 === 0 ? 1 : -1)
       : Math.abs(predictedOpponentX) < 0.16
         ? (safeVariation >= 0 ? 1 : -1)
         : predictedOpponentX > 0 ? -1 : 1;
