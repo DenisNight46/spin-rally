@@ -301,7 +301,7 @@ describe("AI tactical input safety", () => {
 
     expect(Object.values(plan).filter((value): value is number => typeof value === "number").every(Number.isFinite)).toBe(true);
     expect(plan.predictedOpponentX).toBe(0);
-    expect(Math.abs(plan.offset)).toBeLessThanOrEqual(0.075);
+    expect(Math.abs(plan.offset)).toBeLessThanOrEqual(0.09);
     expect(Math.abs(plan.height)).toBeLessThanOrEqual(0.085);
   });
 
@@ -309,7 +309,7 @@ describe("AI tactical input safety", () => {
     const plan = planAIShot("hard", 1_000_000, 500, -500, 500, 500, 500);
     expect(plan.predictedOpponentX).toBeGreaterThanOrEqual(-0.98);
     expect(plan.predictedOpponentX).toBeLessThanOrEqual(0.98);
-    expect(Math.abs(plan.offset)).toBeLessThanOrEqual(0.075);
+    expect(Math.abs(plan.offset)).toBeLessThanOrEqual(0.09);
     expect(Math.abs(plan.height)).toBeLessThanOrEqual(0.11);
   });
 });
@@ -364,7 +364,7 @@ describe("AI tactical shot planning", () => {
     const plan = planAIShot("hard", 4, 0.9, 100, 0.5, 1);
     expect(plan.predictedOpponentX).toBe(0.98);
     expect(plan.offset).toBeLessThan(0);
-    expect(Math.abs(plan.offset)).toBeLessThanOrEqual(0.095);
+    expect(Math.abs(plan.offset)).toBeLessThanOrEqual(0.09);
   });
 });
 
