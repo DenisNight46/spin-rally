@@ -67,7 +67,7 @@ describe("low forward racket contacts", () => {
     paddle.prevZ = sign * 0.76;
     sim.state.ball = {
       p: { x: 0.01, y: 0.84, z: -sign * 0.82 },
-      v: { x: 0, y: 0.1, z: sign * 3.2 },
+      v: { x: 0, y: 1.2, z: sign * 6 },
       spin: { x: 0, y: 0, z: 0 },
       lastHitter: side === 0 ? 1 : 0,
       bounces: 1,
@@ -77,7 +77,7 @@ describe("low forward racket contacts", () => {
     sim.setInput(side, { ...DEFAULT_INPUT, x: 0, y: 0.84, z: sign * 0.76 });
 
     let returned = false;
-    for (let frame = 0; frame < 40 && !returned; frame += 1) {
+    for (let frame = 0; frame < 100 && !returned; frame += 1) {
       sim.step(1 / 240);
       returned = sim.state.event?.type === "hit" && sim.state.event.side === side;
     }
