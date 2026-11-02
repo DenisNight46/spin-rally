@@ -85,8 +85,14 @@ if (!browser) fail("no usable browser found (playwright bundled/chrome/chromium 
 const page = await browser.newPage({ viewport: { width: 1280, height: 720 } });
 
 const consoleErrors = [];
+const failedRequests = [];
+const badResponses = [];
 page.on("console", (m) => { if (m.type() === "error") consoleErrors.push(m.text()); });
 page.on("pageerror", (e) => consoleErrors.push(String(e)));
+page.on("requestfailed", (request) => failedRequests.push(`${request.method()} ${request.url()}: ${request.failure()?.errorText ?? "request failed"}`));
+page.on("response", (response) => {
+  if (response.status() >= 400) badResponses.push(`${response.status()} ${response.url()}`);
+});
 
 await page.goto(`http://127.0.0.1:${port}/?verify=1`, { waitUntil: "networkidle" });
 // The page boots through a React shell (src/main.tsx -> src/App.tsx -> src/pages/Home.tsx),
