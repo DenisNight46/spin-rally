@@ -284,3 +284,19 @@ kbd { padding: 3px 6px; border: 1px solid #395254; border-bottom-width: 2px; bor
 .accuracy-target { color: #42f0c1; font-size: 28px; }
 .accuracy-progress { border: 1px solid rgba(66,240,193,.35); }
 .accuracy-progress > b { color: #42f0c1; }
+
+
+/* Fullscreen and responsive stage refinements */
+#game-root:fullscreen { width: 100vw; height: 100vh; height: 100dvh; background: #07151d; }
+#game-root:fullscreen #game-canvas { width: 100%; height: 100%; }
+#game-root:fullscreen #ui-overlay { width: 100%; height: 100%; }
+@media (min-width: 1200px) and (min-height: 700px) {
+  .title-layout { grid-template-columns: minmax(420px, 1fr) minmax(420px, 500px); max-width: 1800px; margin-inline: auto; }
+}
+@media (max-width: 700px) and (orientation: landscape) {
+  .game-topbar { top: max(5px, env(safe-area-inset-top)); left: max(6px, env(safe-area-inset-left)); right: max(6px, env(safe-area-inset-right)); }
+  .scoreboard { max-width: min(62vw, 460px); }
+  .judge-call { display: none; }
+  .match-meta { top: auto; bottom: max(8px, env(safe-area-inset-bottom)); }
+  .control-hint { display: none; }
+}
