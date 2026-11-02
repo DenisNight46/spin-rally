@@ -236,6 +236,57 @@ describe("shared racket trajectory prediction", () => {
   });
 });
 
+describe("AI lifecycle safety", () => {
+  it("resets its internal clock so a restarted match is deterministic", () => {
+    const reusedSim = new TableTennisSim(901);
+    const freshSim = new TableTennisSim(901);
+    reusedSim.startMatch();
+    freshSim.startMatch();
+    const reusedAI = new TableTennisAI("hard");
+    const freshAI = new TableTennisAI("hard");
+
+    for (let frame = 0; frame < 300; frame += 1) reusedAI.update(reusedSim, 1 / 60);
+    reusedAI.reset();
+
+    const rallyState = (sim: TableTennisSim) => {
+      sim.state.phase = "rally";
+      sim.state.rallyHits = 2;
+      sim.state.ball = {
+        p: { x: 0.16, y: 1.18, z: -0.92 },
+        v: { x: -0.25, y: 0.18, z: -3.1 },
+        spin: { x: 12, y: 0, z: -4 },
+        lastHitter: 0,
+        bounces: 1,
+        firstBounce: 0,
+        serve: false,
+      };
+      sim.state.paddles[0].x = 0.42;
+      sim.state.paddles[0].vx = -0.7;
+    };
+    rallyState(reusedSim);
+    rallyState(freshSim);
+
+    reusedAI.update(reusedSim, 1 / 60);
+    freshAI.update(freshSim, 1 / 60);
+    expect(reusedSim.getInput(1)).toEqual(freshSim.getInput(1));
+  });
+
+  it("ignores invalid AI frame deltas and caps unusually large updates", () => {
+    const sim = new TableTennisSim(902);
+    sim.startMatch();
+    const ai = new TableTennisAI("normal");
+    const before = { ...sim.getInput(1) };
+
+    ai.update(sim, Number.NaN);
+    ai.update(sim, Number.POSITIVE_INFINITY);
+    ai.update(sim, -1);
+    expect(sim.getInput(1)).toEqual(before);
+
+    expect(() => ai.update(sim, 10)).not.toThrow();
+    expect(Object.values(sim.getInput(1)).every((value) => typeof value === "boolean" || Number.isFinite(value))).toBe(true);
+  });
+});
+
 describe("AI tactical shot planning", () => {
   it("anticipates lateral movement and attacks the newly exposed side", () => {
     const stationaryPlan = planAIShot("hard", 0, -0.55, 0, 0.25, 0.5);
