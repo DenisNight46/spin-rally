@@ -232,27 +232,28 @@ describe("moving racket trajectory prediction", () => {
     expect(moving!.time - fixed!.time).toBeLessThan(0.03);
   });
 
-  it("matches the live simulation's moving-racket contact time", () => {
-    const sim = new TableTennisSim(112);
+  it.each([0, 1] as const)("matches live moving-racket contact time on side %s", (side) => {
+    const sim = new TableTennisSim(112 + side);
     sim.startMatch();
     sim.state.phase = "rally";
+    const sign = side === 0 ? 1 : -1;
     sim.state.ball = {
-      p: { x: 0, y: 1.12, z: -0.45 },
-      v: { x: 0, y: 1.5, z: -2.8 },
+      p: { x: 0, y: 1.12, z: sign * 0.45 },
+      v: { x: 0, y: 1.5, z: sign * 2.8 },
       spin: { x: 0, y: 0, z: 0 },
-      lastHitter: 0,
+      lastHitter: side === 0 ? 1 : 0,
       bounces: 1,
-      firstBounce: 0,
+      firstBounce: side === 0 ? 1 : 0,
       serve: false,
     };
-    const paddle = sim.state.paddles[1];
-    paddle.z = -1.48;
-    paddle.prevZ = -1.48;
+    const paddle = sim.state.paddles[side];
+    paddle.z = sign * 1.48;
+    paddle.prevZ = sign * 1.48;
     paddle.vz = 0;
-    sim.setInput(1, { ...DEFAULT_INPUT, z: -1.0 });
+    sim.setInput(side, { ...DEFAULT_INPUT, z: sign * 1.0 });
 
-    const predicted = predictRacketIntercept(sim.state, 1, 2, false, 1.0, {
-      z: paddle.z, vz: paddle.vz, targetZ: -1.0,
+    const predicted = predictRacketIntercept(sim.state, side, 2, false, 1.0, {
+      z: paddle.z, vz: paddle.vz, targetZ: sign * 1.0,
     });
     expect(predicted).not.toBeNull();
     if (!predicted) throw new Error("Moving-racket predictor did not find a contact");
@@ -261,14 +262,14 @@ describe("moving racket trajectory prediction", () => {
     const dt = 1 / 240;
     for (let frame = 0; frame < 240; frame += 1) {
       sim.step(dt);
-      if (sim.state.event?.type === "hit" && sim.state.event.side === 1) {
+      if (sim.state.event?.type === "hit" && sim.state.event.side === side) {
         actualTime = (frame + 1) * dt;
         break;
       }
       if (sim.state.phase !== "rally") break;
     }
 
-    expect(actualTime, "The authoritative simulation did not register the predicted racket contact").not.toBeNull();
+    expect(actualTime, `The authoritative simulation did not register the predicted racket contact on side ${side}`).not.toBeNull();
     expect(actualTime!).toBeCloseTo(predicted.time, 1);
   });
 });
