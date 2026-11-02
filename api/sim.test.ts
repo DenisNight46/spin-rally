@@ -231,6 +231,46 @@ describe("moving racket trajectory prediction", () => {
     expect(moving!.time).toBeGreaterThan(fixed!.time);
     expect(moving!.time - fixed!.time).toBeLessThan(0.03);
   });
+
+  it("matches the live simulation's moving-racket contact time", () => {
+    const sim = new TableTennisSim(112);
+    sim.startMatch();
+    sim.state.phase = "rally";
+    sim.state.ball = {
+      p: { x: 0, y: 1.12, z: -0.45 },
+      v: { x: 0, y: 0.1, z: -2.8 },
+      spin: { x: 0, y: 0, z: 0 },
+      lastHitter: 0,
+      bounces: 1,
+      firstBounce: 0,
+      serve: false,
+    };
+    const paddle = sim.state.paddles[1];
+    paddle.z = -1.48;
+    paddle.prevZ = -1.48;
+    paddle.vz = 0;
+    sim.setInput(1, { ...DEFAULT_INPUT, z: -1.0 });
+
+    const predicted = predictRacketIntercept(sim.state, 1, 2, false, 1.0, {
+      z: paddle.z, vz: paddle.vz, targetZ: -1.0,
+    });
+    expect(predicted).not.toBeNull();
+    if (!predicted) throw new Error("Moving-racket predictor did not find a contact");
+
+    let actualTime: number | null = null;
+    const dt = 1 / 240;
+    for (let frame = 0; frame < 240; frame += 1) {
+      sim.step(dt);
+      if (sim.state.event?.type === "hit" && sim.state.event.side === 1) {
+        actualTime = (frame + 1) * dt;
+        break;
+      }
+      if (sim.state.phase !== "rally") break;
+    }
+
+    expect(actualTime, "The authoritative simulation did not register the predicted racket contact").not.toBeNull();
+    expect(actualTime!).toBeCloseTo(predicted.time, 1);
+  });
 });
 
 describe("shared racket trajectory prediction", () => {
