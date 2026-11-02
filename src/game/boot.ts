@@ -299,22 +299,13 @@ class SpinRallyGame {
     if (this.input.x !== 0) this.humanTarget.x += this.input.x * dt * 1.85 * orientation;
     if (this.input.y !== 0) this.humanTarget.y += this.input.y * dt * 1.45;
 
-    // Arcade reach: when the ball has crossed onto our half, let the racket
-    // move forward to meet short balls near the net instead of being trapped
-    // on the baseline. The player still controls lateral and vertical aim.
-    const ballDepth = state.ball.p.z * sign;
-    const reachPlane = state.phase === "rally" && state.ball.v.z * sign > 0.15 && ballDepth > 0
-      ? Math.max(0.72, Math.min(1.48, ballDepth + 0.48))
-      : 1.48;
-
-    // No automatic aim correction: the player must place the racket under the ball.
-    // Depth positioning remains assisted so short balls are physically reachable.
+    // Fully manual contact: keep the racket at its neutral depth.
+    // It must not lunge toward the incoming ball or attempt an automatic hit.
+    const reachPlane = 1.48;
 
     this.humanTarget.x = Math.max(-0.98, Math.min(0.98, this.humanTarget.x));
     this.humanTarget.y = Math.max(0.66, Math.min(1.7, this.humanTarget.y));
-    // Depth is assisted automatically for short balls; normal rallies stay
-    // near the baseline. This is intentionally forgiving, not a third axis
-    // the player has to micromanage on a phone screen.
+    // Depth stays fixed until explicit manual depth/swing controls are added.
     this.humanTarget.z = sign * reachPlane;
     return {
       x: this.humanTarget.x,
