@@ -171,7 +171,7 @@ export class TableTennisAI {
       const anticipation = clamp(level.anticipation / Math.max(intercept.time, 0.04), 0.12, 1);
       const tracking = clamp(dt * 60 * level.speed * (0.75 + anticipation), 0, 1);
       const targetX = clamp(intercept.x + this.shotOffset + error, -0.94, 0.94);
-      const targetY = clamp(intercept.y + this.shotHeight, state.rallyHits === 1 ? 0.62 : 0.84, 1.70);
+      const targetY = clamp(intercept.y + this.shotHeight, 0.62, 1.70);
 
       this.input.x += (targetX - this.input.x) * tracking;
       this.input.y += (targetY - this.input.y) * tracking;
