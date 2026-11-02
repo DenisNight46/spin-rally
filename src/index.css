@@ -188,7 +188,7 @@ kbd { padding: 3px 6px; border: 1px solid #395254; border-bottom-width: 2px; bor
   .quick-start, .title-footer { display: none; }
   .game-topbar { top: max(10px, env(safe-area-inset-top)); left: max(10px, env(safe-area-inset-left)); right: max(10px, env(safe-area-inset-right)); grid-template-columns: 38px 1fr 38px; gap: 7px; }
   .game-topbar > .icon-button, .game-actions .icon-button { width: 36px; height: 36px; }
-  .game-actions .icon-button:first-child { display: none; }
+  /* Keep fullscreen accessible in Telegram Mini Apps on phones. */
   .scoreboard { padding: 8px 9px; border-radius: 13px; grid-template-columns: 1fr 38px 1fr; }
   .player-score { gap: 5px; }
   .player-score > b { font-size: 28px; }
