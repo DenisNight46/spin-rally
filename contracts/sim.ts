@@ -303,7 +303,9 @@ export class TableTennisSim {
     // Vertical racket-head motion transfers lift directly to the ball. The
     // friction impulse still generates spin; this term prevents a descending
     // contact from being returned flat into the floor.
-    b.v.y += clamp(p.vy * 2.2, -5, 5);
+    b.v.y += clamp(p.vy * 0.85, -2.2, 2.2);
+    // Prevent arcade racket-drive assistance from producing unrealistic sky-high lobs.
+    b.v.y = Math.min(b.v.y, 4.6);
     const angular=cross(arm,impulse);
     b.spin.x+=angular.x/BALL_INERTIA;b.spin.y+=angular.y/BALL_INERTIA;b.spin.z+=angular.z/BALL_INERTIA;
     // Small torsional damping models the rubber/ball contact patch.
