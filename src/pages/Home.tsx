@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Bot, Check, ChevronLeft, CircleHelp, Copy, MousePointer2, Palette, Pause, Play, RotateCcw, Trophy, Users, Volume2, VolumeX, Wifi, X, Share2 } from "lucide-react";
+import { Bot, Check, ChevronLeft, CircleHelp, Copy, MousePointer2, Palette, Pause, Play, RotateCcw, Trophy, Users, Volume2, VolumeX, Wifi, X, Share2, Maximize2 } from "lucide-react";
 import { startGame, stopGame } from "@/game/boot";
 import type { GameController, GameUIState } from "@/game/types";
 import type { Difficulty } from "@/game/ai";
@@ -41,6 +41,15 @@ export default function Home() {
     controller.current = startGame(canvas, setUi);
     return () => { stopGame(); disposeTelegram(); };
   }, []);
+
+  const toggleFullscreen = async () => {
+    try {
+      if (document.fullscreenElement) await document.exitFullscreen();
+      else await document.getElementById("game-root")?.requestFullscreen?.();
+    } catch {
+      // Fullscreen can be unavailable in embedded browsers or without a user gesture.
+    }
+  };
 
   const goTitle = () => {
     controller.current?.showTitle();
@@ -97,6 +106,7 @@ export default function Home() {
           <>
             <header className="title-topbar">
               <div className="brand-mini"><span className="brand-ball" />SPIN RALLY</div>
+              <button className="icon-button glass" onClick={toggleFullscreen} aria-label="На весь экран" title="На весь экран"><Maximize2 size={18} /></button>
               <button className="icon-button glass" onClick={() => controller.current?.toggleMute()} aria-label="Звук">
                 {ui.muted ? <VolumeX size={19} /> : <Volume2 size={19} />}
               </button>
@@ -203,6 +213,7 @@ export default function Home() {
                 <PlayerScore name={ui.players[1].name} color={ui.players[1].kit} team={teamForSide(1)} score={ui.state.scores[1]} games={ui.state.games[1]} serving={ui.state.server === 1 && ui.state.phase === "serve"} right />
               </div>
               <div className="game-actions">
+                <button className="icon-button glass" onClick={toggleFullscreen} aria-label="На весь экран" title="На весь экран"><Maximize2 size={18} /></button>
                 <button className="icon-button glass" onClick={() => controller.current?.toggleMute()} aria-label="Звук">{ui.muted ? <VolumeX size={19} /> : <Volume2 size={19} />}</button>
                 {(ui.mode === "single" || ui.mode === "training") && <button className="icon-button glass" onClick={() => controller.current?.togglePause()} aria-label="Пауза"><Pause size={19} /></button>}
               </div>
