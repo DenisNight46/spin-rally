@@ -40,6 +40,9 @@ function syncTelegramViewport(webApp: TelegramWebApp): void {
     root().style.setProperty("--tg-safe-bottom", `${inset("bottom")}px`);
     root().style.setProperty("--tg-safe-left", `${inset("left")}px`);
   }
+  // CSS viewport variables can change without a browser window resize event.
+  // Notify the renderer so its camera and drawing buffer follow Telegram's viewport.
+  window.dispatchEvent(new Event("resize"));
 }
 
 /** Initializes Telegram's optional Mini App bridge; ordinary browser play stays unchanged. */
