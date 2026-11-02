@@ -46,7 +46,8 @@ const MIME = { ".html": "text/html", ".js": "text/javascript", ".css": "text/css
 
 const server = createServer(async (req, res) => {
   try {
-    const raw = req.url === "/" ? "/index.html" : req.url.split("?")[0];
+    const pathname = (req.url || "/").split("?")[0] || "/";
+    const raw = pathname === "/" ? "/index.html" : pathname;
     // Decode: request paths are percent-encoded, so an asset named "level 1.png" arrives as
     // "level%201.png" and would 404 (surfacing later as a bogus console-error failure).
     let path;
