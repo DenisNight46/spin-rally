@@ -191,7 +191,11 @@ describe("moving racket trajectory prediction", () => {
     });
     expect(fixed).not.toBeNull();
     expect(moving).not.toBeNull();
-    expect(moving!.time).toBeLessThan(fixed!.time);
+    // The racket starts behind the fixed contact plane and accelerates
+    // toward the net, so it reaches the incoming ball later than a racket
+    // already positioned on that plane.
+    expect(moving!.time).toBeGreaterThan(fixed!.time);
+    expect(moving!.time - fixed!.time).toBeLessThan(0.03);
   });
 });
 
