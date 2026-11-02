@@ -75,7 +75,8 @@ export function planAIShot(
 }
 
 export function predictAIIntercept(sim: TableTennisSim): { x: number; y: number; time: number } | null {
-  return predictRacketIntercept(sim.state, 1);
+  const paddle = sim.state.paddles[1];
+  return predictRacketIntercept(sim.state, 1, 2, false, Math.abs(AI_RACKET_Z), { z: paddle.z, vz: paddle.vz, targetZ: AI_RACKET_Z });
 }
 
 export class TableTennisAI {
