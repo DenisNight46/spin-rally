@@ -238,7 +238,7 @@ describe("moving racket trajectory prediction", () => {
     sim.state.phase = "rally";
     sim.state.ball = {
       p: { x: 0, y: 1.12, z: -0.45 },
-      v: { x: 0, y: 0.1, z: -2.8 },
+      v: { x: 0, y: 1.5, z: -2.8 },
       spin: { x: 0, y: 0, z: 0 },
       lastHitter: 0,
       bounces: 1,
