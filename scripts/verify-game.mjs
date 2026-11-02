@@ -301,6 +301,27 @@ if (mobileBox) {
   if (mobileUi.probe && moved && Math.hypot(moved.x - mobileUi.probe.x, moved.y - mobileUi.probe.y) < 0.03) {
     fail("mobile touch drag did not move the racket");
   }
+  // A short swipe may begin, move and end before the next animation frame.
+  // The initial and final samples must still produce racket movement.
+  const fastStartX = mobileBox.x + mobileBox.width * 0.5;
+  const fastStartY = mobileBox.y + mobileBox.height * 0.65;
+  const beforeFastSwipe = await mobilePage.evaluate(() => window.__gameProbe?.());
+  const fastTouch = await mobilePage.context().newCDPSession(mobilePage);
+  await fastTouch.send("Input.dispatchTouchEvent", {
+    type: "touchStart",
+    touchPoints: [{ x: fastStartX, y: fastStartY, id: 2 }],
+  });
+  await fastTouch.send("Input.dispatchTouchEvent", {
+    type: "touchMove",
+    touchPoints: [{ x: fastStartX, y: fastStartY - 90, id: 2 }],
+  });
+  await fastTouch.send("Input.dispatchTouchEvent", { type: "touchEnd", touchPoints: [] });
+  await fastTouch.detach();
+  await mobilePage.waitForTimeout(250);
+  const afterFastSwipe = await mobilePage.evaluate(() => window.__gameProbe?.());
+  if (beforeFastSwipe && afterFastSwipe && afterFastSwipe.y <= beforeFastSwipe.y + 0.03) {
+    fail("a fast touch swipe completed between frames was lost instead of moving the racket");
+  }
 }
 if (mobileErrors.length) fail(`mobile page reported ${mobileErrors.length} console error(s): ${mobileErrors[0]}`);
 await mobilePage.close();
