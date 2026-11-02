@@ -143,7 +143,8 @@ export class TableTennisSim {
   setInput(side: Side, input: PaddleInput): void {
     const target=this.inputs[side], sign=sideSign(side);
     target.x=clamp(Number.isFinite(input.x)?input.x:0,-0.98,0.98);
-    target.y=clamp(Number.isFinite(input.y)?input.y:1.16,input.swingY !== undefined ? 0.62 : 0.84,1.7);
+    // Player and AI share the same low-contact reach; never silently lift a human target from 0.66 m to 0.84 m.
+    target.y=clamp(Number.isFinite(input.y)?input.y:1.16,0.62,1.7);
     // Let the racket travel forward into the court to meet short serves and
     // drop shots. The old 1.38 m lower bound contradicted the intercept planner
     // (0.72 m minimum), making those contacts physically impossible.
