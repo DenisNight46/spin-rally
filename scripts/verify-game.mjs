@@ -88,7 +88,7 @@ const consoleErrors = [];
 page.on("console", (m) => { if (m.type() === "error") consoleErrors.push(m.text()); });
 page.on("pageerror", (e) => consoleErrors.push(String(e)));
 
-await page.goto(`http://127.0.0.1:${port}/`, { waitUntil: "networkidle" });
+await page.goto(`http://127.0.0.1:${port}/?verify=1`, { waitUntil: "networkidle" });
 // The page boots through a React shell (src/main.tsx -> src/App.tsx -> src/pages/Home.tsx),
 // so the canvas only exists after the first effect runs: wait for the readiness flag the game
 // raises on its first rendered frame, then fall back to a fixed delay if it never appears.
@@ -295,7 +295,24 @@ if (mobileBox) {
 if (mobileErrors.length) fail(`mobile page reported ${mobileErrors.length} console error(s): ${mobileErrors[0]}`);
 await mobilePage.close();
 
-// 7) Zero console errors
+// 7) Run a deterministic end-to-end match in the real browser simulation.
+// The verification hook drives both the human input and AI through the same
+// fixed-step physics used by normal play; this catches regressions that unit
+// tests alone cannot detect (serve → receive → rally → points → match end).
+await page.keyboard.press("Escape");
+await page.getByRole("button", { name: "Выйти в меню" }).click();
+await page.getByRole("button", { name: "Одиночный матч" }).click();
+await page.getByRole("button", { name: "Новичок" }).click();
+await page.waitForFunction(() => typeof window.__gameVerifyMatch === "function");
+const matchResult = await page.evaluate(() => window.__gameVerifyMatch());
+if (matchResult.phase !== "gameover") {
+  fail(`deterministic browser match did not finish (phase=${matchResult.phase}, games=${JSON.stringify(matchResult.games)})`);
+}
+if (matchResult.games[0] + matchResult.games[1] < 2) {
+  fail(`deterministic browser match ended before two games were awarded: ${JSON.stringify(matchResult.games)}`);
+}
+
+// 8) Zero console errors
 if (consoleErrors.length) fail(`${consoleErrors.length} console error(s): ${consoleErrors[0]}`);
 
 await browser.close();
