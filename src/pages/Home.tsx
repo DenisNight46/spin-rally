@@ -44,10 +44,27 @@ export default function Home() {
 
   const toggleFullscreen = async () => {
     try {
-      if (document.fullscreenElement) await document.exitFullscreen();
-      else await document.getElementById("game-root")?.requestFullscreen?.();
+      const telegram = window.Telegram?.WebApp as (typeof window.Telegram.WebApp & {
+        requestFullscreen?: () => Promise<void> | void;
+        exitFullscreen?: () => Promise<void> | void;
+      }) | undefined;
+      if (telegram?.requestFullscreen) {
+        if (document.fullscreenElement) await document.exitFullscreen();
+        else await telegram.requestFullscreen();
+        return;
+      }
+      if (document.fullscreenElement) {
+        await document.exitFullscreen();
+        return;
+      }
+      const root = document.getElementById("game-root") as (HTMLElement & {
+        webkitRequestFullscreen?: () => Promise<void> | void;
+      }) | null;
+      if (root?.requestFullscreen) await root.requestFullscreen({ navigationUI: "hide" });
+      else if (root?.webkitRequestFullscreen) await root.webkitRequestFullscreen();
+      else if (document.documentElement.requestFullscreen) await document.documentElement.requestFullscreen({ navigationUI: "hide" });
     } catch {
-      // Fullscreen can be unavailable in embedded browsers or without a user gesture.
+      // The host may forbid fullscreen (for example, an iframe without allow="fullscreen").
     }
   };
 
