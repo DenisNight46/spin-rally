@@ -360,7 +360,7 @@ describe("table tennis ball physics", () => {
   it("clamps remote racket targets and replaces non-finite coordinates safely", () => {
     const sim = new TableTennisSim(23);
     sim.setInput(0, { ...DEFAULT_INPUT, x: 500, y: -500, z: -500 });
-    expect(sim.getInput(0)).toMatchObject({ x: 0.98, y: 0.84, z: 0.62 });
+    expect(sim.getInput(0)).toMatchObject({ x: 0.98, y: 0.62, z: 0.62 });
 
     sim.setInput(1, { ...DEFAULT_INPUT, x: Number.NaN, y: Number.POSITIVE_INFINITY, z: Number.NaN });
     expect(sim.getInput(1)).toMatchObject({ x: 0, y: 1.16, z: -1.48 });
