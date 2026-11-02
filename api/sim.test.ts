@@ -864,6 +864,20 @@ describe("table tennis ball physics", () => {
     }
   });
 
+  it("makes the normal AI punish a committed lateral recovery", () => {
+    const movingRight = planAIShot("normal", 0, 0, 3, 0.2, 0);
+    const movingLeft = planAIShot("normal", 0, 0, -3, 0.2, 0);
+    const stationary = planAIShot("normal", 0, 0, 0, 0.2, 0);
+
+    expect(movingRight.predictedOpponentX).toBeGreaterThan(0.12);
+    expect(movingRight.offset).toBeLessThan(0);
+    expect(movingLeft.predictedOpponentX).toBeLessThan(-0.12);
+    expect(movingLeft.offset).toBeGreaterThan(0);
+    // When the opponent is not committing to a side, club-level AI keeps its
+    // readable alternating placement instead of guessing at movement.
+    expect(stationary.offset).toBeGreaterThan(0);
+  });
+
   it("gives each AI difficulty a distinct rally-placement strategy", () => {
     const makeReturn = (difficulty: "easy" | "normal" | "hard", rallyHits: number, opponentX: number) => {
       const sim = new TableTennisSim(31);
