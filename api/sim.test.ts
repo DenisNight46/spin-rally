@@ -475,14 +475,16 @@ describe("AI tactical shot planning", () => {
 });
 
 describe("AI spin response in live rallies", () => {
-  it.each([
-    ["topspin", { x: 34, y: 0, z: 0 }],
-    ["backspin", { x: -34, y: 0, z: 0 }],
-    ["sidespin", { x: 0, y: 0, z: 28 }],
-    ["combined spin", { x: 22, y: -12, z: 18 }],
-  ] as const)("tracks and physically returns a %s ball", (_profile, spin) => {
+  it.each(
+    (["easy", "normal", "hard"] as const).flatMap((difficulty) => [
+      [difficulty, "topspin", { x: 34, y: 0, z: 0 }] as const,
+      [difficulty, "backspin", { x: -34, y: 0, z: 0 }] as const,
+      [difficulty, "sidespin", { x: 0, y: 0, z: 28 }] as const,
+      [difficulty, "combined spin", { x: 22, y: -12, z: 18 }] as const,
+    ]),
+  )("tracks and physically returns a %s ball with %s on every difficulty", (difficulty, _profile, spin) => {
     const sim = new TableTennisSim(211);
-    const ai = new TableTennisAI("hard");
+    const ai = new TableTennisAI(difficulty);
     sim.startMatch();
     sim.state.phase = "rally";
     sim.state.rallyHits = 2;
