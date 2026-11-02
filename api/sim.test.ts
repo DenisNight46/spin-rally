@@ -1142,3 +1142,53 @@ describe("AI legal returns on every difficulty", () => {
     },
   );
 });
+
+
+describe("simulation stability under irregular frame timing", () => {
+  it("produces the same paddle motion at 60 Hz and 120 Hz render cadence", () => {
+    const at60 = new TableTennisSim(901);
+    const at120 = new TableTennisSim(901);
+    at60.startMatch();
+    at120.startMatch();
+    const target = { ...DEFAULT_INPUT, x: 0.72, y: 1.52, z: 0.88 };
+    at60.setInput(0, target);
+    at120.setInput(0, target);
+
+    for (let frame = 0; frame < 60; frame += 1) at60.step(1 / 60);
+    for (let frame = 0; frame < 120; frame += 1) at120.step(1 / 120);
+
+    for (const key of ["x", "y", "z", "vx", "vy", "vz"] as const) {
+      expect(at60.state.paddles[0][key]).toBeCloseTo(at120.state.paddles[0][key], 4);
+    }
+  });
+
+  it("ignores invalid frame deltas without corrupting simulation state", () => {
+    const sim = new TableTennisSim(902);
+    sim.startMatch();
+    const before = structuredClone(sim.state);
+    sim.step(Number.NaN);
+    sim.step(Number.POSITIVE_INFINITY);
+    sim.step(-1 / 60);
+    expect(sim.state).toEqual(before);
+  });
+
+  it("sanitizes non-finite remote paddle input before it reaches physics", () => {
+    const sim = new TableTennisSim(903);
+    sim.startMatch();
+    sim.setInput(0, {
+      ...DEFAULT_INPUT,
+      x: Number.NaN,
+      y: Number.POSITIVE_INFINITY,
+      z: Number.NEGATIVE_INFINITY,
+      swingY: Number.NaN,
+      swingZ: Number.POSITIVE_INFINITY,
+    });
+    expect(sim.getInput(0)).toMatchObject({
+      x: 0,
+      y: 1.16,
+      z: 1.48,
+      swingY: 0,
+      swingZ: 0,
+    });
+  });
+});
