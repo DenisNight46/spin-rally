@@ -470,7 +470,7 @@ describe("table tennis ball physics", () => {
     const upward = racketImpact(0, 1.7);
     expect(Number.isFinite(still.vy)).toBe(true);
     expect(Number.isFinite(upward.vy)).toBe(true);
-    expect(upward.vy).toBeLessThanOrEqual(4.6);
+    expect(upward.vy).toBeLessThanOrEqual(3.6);
   });
 
   it("generates sidespin from horizontal racket movement", () => {
