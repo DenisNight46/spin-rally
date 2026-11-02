@@ -204,7 +204,6 @@ describe("moving racket trajectory prediction", () => {
   });
 
   it("predicts contact against the racket's accelerated forward movement", () => {
-  it("predicts contact against the racket's accelerated forward movement", () => {
     const sim = new TableTennisSim(110);
     sim.startMatch();
     sim.state.phase = "rally";
