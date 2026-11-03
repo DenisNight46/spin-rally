@@ -221,28 +221,35 @@ await page.waitForTimeout(250);
 await page.keyboard.press("Space");
 await page.waitForTimeout(400);
 
-// 4) Direction assertions: W raises the racket (Y increasing), D moves it right (X increasing).
-async function playerPos() {
-  return page.evaluate(() => window.__gameProbe ? window.__gameProbe() : null);
-}
-async function deltaAfter(key, ms = 500) {
-  const before = await playerPos();
-  if (!before) return null;
-  await page.keyboard.down(key);
-  await page.waitForTimeout(ms);
-  await page.keyboard.up(key);
-  const after = await playerPos();
-  return after ? { dx: after.x - before.x, dy: after.y - before.y } : null;
-}
-
+// 4) Pointer direction assertions: moving the mouse up/right must move the racket up/right.
+// Keyboard gameplay controls are intentionally not supported; mouse and touch are the only
+// racket-position inputs. Keep this assertion aligned with the mobile touch-drag checks below.
 const probe = await page.evaluate(() => !!window.__gameProbe);
 if (probe) {
-  const dW = await deltaAfter("KeyW");
-  if (dW && dW.dy <= 0.05) fail(`W did not raise the racket (dy=${dW?.dy.toFixed(3)}) — vertical mapping looks reversed`);
-  const dD = await deltaAfter("KeyD");
-  if (dD && dD.dx <= 0.05) fail(`D did not move the racket right (dx=${dD?.dx.toFixed(3)}) — horizontal mapping looks reversed`);
+  const canvasBox = await page.locator(`#${CANVAS_ID}`).boundingBox();
+  if (!canvasBox) fail("game canvas has no visible bounding box for desktop pointer checks");
+  const centerX = canvasBox.x + canvasBox.width * 0.5;
+  const lowerY = canvasBox.y + canvasBox.height * 0.68;
+  const upperY = canvasBox.y + canvasBox.height * 0.38;
+  await page.mouse.move(centerX, lowerY);
+  await page.waitForTimeout(250);
+  const beforeUp = await page.evaluate(() => window.__gameProbe?.());
+  await page.mouse.move(centerX, upperY, { steps: 8 });
+  await page.waitForTimeout(300);
+  const afterUp = await page.evaluate(() => window.__gameProbe?.());
+  if (beforeUp && afterUp && afterUp.y <= beforeUp.y + 0.05) {
+    fail(`moving the mouse upward must move the racket upward (before=${beforeUp.y.toFixed(3)}, after=${afterUp.y.toFixed(3)})`);
+  }
+
+  const beforeRight = await page.evaluate(() => window.__gameProbe?.());
+  await page.mouse.move(canvasBox.x + canvasBox.width * 0.72, upperY, { steps: 8 });
+  await page.waitForTimeout(300);
+  const afterRight = await page.evaluate(() => window.__gameProbe?.());
+  if (beforeRight && afterRight && afterRight.x <= beforeRight.x + 0.05) {
+    fail(`moving the mouse right must move the racket right (before=${beforeRight.x.toFixed(3)}, after=${afterRight.x.toFixed(3)})`);
+  }
 } else {
-  console.warn("WARN: window.__gameProbe not injected, skipping direction assertions (expose a player-coordinate probe in src/game/boot.ts)");
+  console.warn("WARN: window.__gameProbe not injected, skipping pointer direction assertions (expose a player-coordinate probe in src/game/boot.ts)");
 }
 
 // 5) Gameplay screenshot + Esc pause + restart
