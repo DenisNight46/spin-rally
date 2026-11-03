@@ -1,4 +1,4 @@
-import { isTextEntryTarget, normalizePointerPosition } from "@contracts/input";
+import { normalizePointerPosition } from "@contracts/input";
 
 export class Input {
   pointerX = 0;
@@ -9,8 +9,6 @@ export class Input {
   pointerType: string | null = null;
   pointerActive = false;
   private pointerStartFresh = false;
-  readonly actions = new Set<string>();
-  private held = new Set<string>();
   private activePointer: number | null = null;
   private listeners: Array<() => void> = [];
 
@@ -73,8 +71,6 @@ export class Input {
     if (this.activePointer !== null && this.canvas.hasPointerCapture?.(this.activePointer)) {
       this.canvas.releasePointerCapture?.(this.activePointer);
     }
-    this.held.clear();
-    this.actions.clear();
     this.activePointer = null;
     this.pointerStartFresh = false;
     this.pointerActive = false;
