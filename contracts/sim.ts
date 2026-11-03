@@ -10,6 +10,10 @@ export interface PaddleInput {
   swingY?: number;
   /** Optional forward racket-drive velocity used by the offline AI stroke controller. */
   swingZ?: number;
+  /** Human-controlled mode: racket contact requires an explicit stroke. */
+  manual?: boolean;
+  /** One-shot stroke trigger; opens a brief contact window. */
+  swing?: boolean;
 }
 export interface PaddleState extends Vec3 {
   vx: number; vy: number; vz: number;
@@ -111,6 +115,7 @@ export class TableTennisSim {
   private random: () => number;
   private pointTimer = 0;
   private serveTimer = 0;
+  private swingTimers: [number, number] = [0, 0];
   private newGame = false;
   private accumulator = 0;
 
@@ -129,6 +134,7 @@ export class TableTennisSim {
     this.state.paddles = [makePaddle(0), makePaddle(1)];
     this.pointTimer = 0;
     this.serveTimer = 0;
+    this.swingTimers = [0, 0];
     this.state.scores = [0, 0];
     this.state.games = [0, 0];
     this.state.gameNumber = 1;
@@ -152,6 +158,8 @@ export class TableTennisSim {
     target.power=false; target.slice=false; target.serve=Boolean(input.serve);
     target.swingY=clamp(Number.isFinite(input.swingY) ? input.swingY as number : 0,-8,8);
     target.swingZ=clamp(Number.isFinite(input.swingZ) ? input.swingZ as number : 0,-8,8);
+    target.manual=Boolean(input.manual);
+    if (input.swing) this.swingTimers[side] = 0.17;
   }
   getInput(side: Side): PaddleInput { return this.inputs[side]; }
 
@@ -180,6 +188,8 @@ export class TableTennisSim {
 
   private stepFixed(dt:number):void{
     const s=this.state;if(s.phase==="waiting"||s.phase==="gameover")return;
+    this.swingTimers[0]=Math.max(0,this.swingTimers[0]-dt);
+    this.swingTimers[1]=Math.max(0,this.swingTimers[1]-dt);
     this.updatePaddles(dt);
     if(s.phase==="point"){
       this.pointTimer-=dt;if(this.pointTimer<=0)this.prepareServe(this.newGame?`Партия ${s.gameNumber+1}`:"Следующая подача");return;
@@ -264,6 +274,9 @@ export class TableTennisSim {
     const b=this.state.ball;
     for(let side=0 as Side;side<=1;side=(side+1) as Side){
       const p=this.state.paddles[side];if(p.cooldown>0||side===b.lastHitter)continue;
+      // AI and legacy clients retain automatic contact; human-controlled clients
+      // must deliberately swing before the ball reaches the blade.
+      if(this.inputs[side].manual && this.swingTimers[side]<=0)continue;
       const sign=sideSign(side);
       const prevRel=prevBall.z-p.prevZ,nextRel=b.p.z-p.z;
       const crossed=sign>0?(prevRel<=0&&nextRel>=0):(prevRel>=0&&nextRel<=0);
