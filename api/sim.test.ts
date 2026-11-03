@@ -67,6 +67,35 @@ describe("deliberate human racket strokes", () => {
     expect(sim.state.event?.type).toBe("hit");
   });
 
+  it("expires an unused swing window instead of granting a delayed automatic hit", () => {
+    const sim = new TableTennisSim(779);
+    sim.startMatch();
+    sim.setInput(0, { ...DEFAULT_INPUT, manual: true, swing: true });
+    sim.setInput(0, { ...DEFAULT_INPUT, manual: true, swing: false });
+    // Waiting-phase steps advance the contact timer without moving the ball.
+    sim.step(0.08);
+    sim.step(0.08);
+    sim.step(0.08);
+
+    sim.state.phase = "rally";
+    sim.state.ball = {
+      p: { x: 0, y: 1.12, z: 1.37 },
+      v: { x: 0, y: 0, z: 5 },
+      spin: { x: 0, y: 0, z: 0 },
+      lastHitter: 1,
+      bounces: 1,
+      firstBounce: 0,
+      serve: false,
+    };
+    const paddle = sim.state.paddles[0];
+    paddle.x = 0; paddle.y = 1.12; paddle.z = 1.4;
+    paddle.prevY = 1.12; paddle.prevZ = 1.4;
+
+    for (let i = 0; i < 100; i += 1) sim.step(1 / 240);
+    expect(sim.state.ball.lastHitter).toBe(1);
+    expect(sim.state.rallyHits).toBe(0);
+  });
+
   it("preserves automatic racket contact for AI and legacy inputs", () => {
     const sim = new TableTennisSim(778);
     sim.startMatch();
