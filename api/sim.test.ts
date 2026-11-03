@@ -47,7 +47,10 @@ describe("deliberate human racket strokes", () => {
     paddle.x = 0; paddle.y = 1.12; paddle.z = 1.4;
     paddle.prevY = 1.12; paddle.prevZ = 1.4;
     sim.setInput(0, { ...DEFAULT_INPUT, x: 0, y: 1.12, z: 1.4, manual: true, swing });
-    for (let i = 0; i < 100; i += 1) sim.step(1 / 240);
+    for (let i = 0; i < 100; i += 1) {
+      sim.step(1 / 240);
+      if (sim.state.event?.type === "hit") break;
+    }
     return sim;
   }
 
