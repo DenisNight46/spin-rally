@@ -289,16 +289,26 @@ class SpinRallyGame {
       if (!this.input.pointerActive) this.touchDragAnchor = null;
       this.input.pointerFresh = false;
     } else {
-      this.input.consumePointerStart();
+      if (this.input.consumePointerStart()) {
+        this.touchDragAnchor = this.scene.pointerToRacket(this.input.pointerStartX, this.input.pointerStartY, this.ownSide);
+      }
       if (this.input.pointerFresh) {
         const projected = this.scene.pointerToRacket(this.input.pointerX, this.input.pointerY, this.ownSide);
         if (projected) {
           this.humanTarget.x = projected.x;
           this.humanTarget.y = projected.y;
+          // Desktop pointer movement positions the racket; a deliberate
+          // click-and-drag is the stroke gesture, not ordinary mouse aiming.
+          if (this.input.pointerActive && this.touchDragAnchor) {
+            const dx = projected.x - this.touchDragAnchor.x;
+            const dy = projected.y - this.touchDragAnchor.y;
+            if (Math.hypot(dx, dy) >= 0.055) swing = true;
+          }
+          this.touchDragAnchor = this.input.pointerActive ? projected : null;
         }
-        this.touchDragAnchor = null;
         this.input.pointerFresh = false;
       }
+      if (!this.input.pointerActive) this.touchDragAnchor = null;
     }
     if (this.input.x !== 0) this.humanTarget.x += this.input.x * dt * 1.85 * orientation;
     if (this.input.y !== 0) this.humanTarget.y += this.input.y * dt * 1.45;
