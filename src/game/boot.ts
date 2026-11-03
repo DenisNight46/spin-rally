@@ -264,8 +264,7 @@ class SpinRallyGame {
   private humanInput(dt: number): PaddleInput {
     const state = this.currentState();
     const sign = this.ownSide === 0 ? 1 : -1;
-    const orientation = this.ownSide === 0 ? 1 : -1;
-    let swing = this.input.consume("Space");
+    let swing = false;
     // Touch uses relative dragging: the racket starts where it already is and
     // follows the finger's movement. Mouse keeps absolute desktop positioning.
     if (this.input.pointerType === "touch") {
@@ -310,11 +309,6 @@ class SpinRallyGame {
       }
       if (!this.input.pointerActive) this.touchDragAnchor = null;
     }
-    if (this.input.x !== 0) this.humanTarget.x += this.input.x * dt * 1.85 * orientation;
-    if (this.input.y !== 0) this.humanTarget.y += this.input.y * dt * 1.45;
-    // Q/E move the racket along the table axis without automatic ball tracking.
-    // orientation keeps "toward the net" consistent from either end.
-    if (this.input.z !== 0) this.humanTarget.z += this.input.z * dt * 1.15 * orientation;
 
     this.humanTarget.x = Math.max(-0.98, Math.min(0.98, this.humanTarget.x));
     this.humanTarget.y = Math.max(0.66, Math.min(1.7, this.humanTarget.y));
@@ -333,12 +327,9 @@ class SpinRallyGame {
 
   private update(dt: number): void {
     if (this.disposed) return;
-    if (this.input.consume("KeyM")) this.toggleMute();
     if (this.mode === "title") {
-      if (this.input.consume("Space")) this.startSingle("easy");
       return;
     }
-    if (this.input.consume("Escape") || this.input.consume("KeyP")) this.togglePause();
     if (this.paused) return;
     const human = this.humanInput(dt);
     if (this.mode === "single" || this.mode === "training" || this.mode === "accuracy") {
