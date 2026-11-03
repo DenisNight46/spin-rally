@@ -265,6 +265,7 @@ class SpinRallyGame {
     const state = this.currentState();
     const sign = this.ownSide === 0 ? 1 : -1;
     const orientation = this.ownSide === 0 ? 1 : -1;
+    let swing = this.input.consume("Space");
     // Touch uses relative dragging: the racket starts where it already is and
     // follows the finger's movement. Mouse keeps absolute desktop positioning.
     if (this.input.pointerType === "touch") {
@@ -276,8 +277,11 @@ class SpinRallyGame {
       if (this.input.pointerFresh) {
         const projected = this.scene.pointerToRacket(this.input.pointerX, this.input.pointerY, this.ownSide);
         if (projected && this.touchDragAnchor) {
-          this.humanTarget.x += (projected.x - this.touchDragAnchor.x) * 0.9;
-          this.humanTarget.y += (projected.y - this.touchDragAnchor.y) * 0.75;
+          const dx = projected.x - this.touchDragAnchor.x;
+          const dy = projected.y - this.touchDragAnchor.y;
+          this.humanTarget.x += dx * 0.9;
+          this.humanTarget.y += dy * 0.75;
+          if (Math.hypot(dx, dy) >= 0.055) swing = true;
         }
         this.touchDragAnchor = projected;
       }
@@ -314,6 +318,8 @@ class SpinRallyGame {
       power: false,
       slice: false,
       serve: false,
+      manual: true,
+      swing,
     };
   }
 
