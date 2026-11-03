@@ -312,15 +312,13 @@ class SpinRallyGame {
     }
     if (this.input.x !== 0) this.humanTarget.x += this.input.x * dt * 1.85 * orientation;
     if (this.input.y !== 0) this.humanTarget.y += this.input.y * dt * 1.45;
-
-    // Fully manual contact: keep the racket at its neutral depth.
-    // It must not lunge toward the incoming ball or attempt an automatic hit.
-    const reachPlane = 1.48;
+    // Q/E move the racket along the table axis without automatic ball tracking.
+    // orientation keeps "toward the net" consistent from either end.
+    if (this.input.z !== 0) this.humanTarget.z += this.input.z * dt * 1.15 * orientation;
 
     this.humanTarget.x = Math.max(-0.98, Math.min(0.98, this.humanTarget.x));
     this.humanTarget.y = Math.max(0.66, Math.min(1.7, this.humanTarget.y));
-    // Depth stays fixed until explicit manual depth/swing controls are added.
-    this.humanTarget.z = sign * reachPlane;
+    this.humanTarget.z = sign * Math.max(0.72, Math.min(1.72, Math.abs(this.humanTarget.z)));
     return {
       x: this.humanTarget.x,
       y: this.humanTarget.y,
