@@ -261,8 +261,7 @@ class SpinRallyGame {
     return values[0] || 2026;
   }
 
-  private humanInput(dt: number): PaddleInput {
-    const state = this.currentState();
+  private humanInput(): PaddleInput {
     const sign = this.ownSide === 0 ? 1 : -1;
     let swing = false;
     // Touch uses relative dragging: the racket starts where it already is and
@@ -331,7 +330,7 @@ class SpinRallyGame {
       return;
     }
     if (this.paused) return;
-    const human = this.humanInput(dt);
+    const human = this.humanInput();
     if (this.mode === "single" || this.mode === "training" || this.mode === "accuracy") {
       this.sim.setInput(0, human);
       this.ai.update(this.sim, dt);
