@@ -28,6 +28,64 @@ function racketImpact(targetX: number, targetY: number) {
   return { spin: sim.state.ball.spin, vy: sim.state.ball.v.y };
 }
 
+
+describe("deliberate human racket strokes", () => {
+  function manualContact(swing: boolean) {
+    const sim = new TableTennisSim(777);
+    sim.startMatch();
+    sim.state.phase = "rally";
+    sim.state.ball = {
+      p: { x: 0, y: 1.12, z: 1.37 },
+      v: { x: 0, y: 0, z: 5 },
+      spin: { x: 0, y: 0, z: 0 },
+      lastHitter: 1,
+      bounces: 1,
+      firstBounce: 0,
+      serve: false,
+    };
+    const paddle = sim.state.paddles[0];
+    paddle.x = 0; paddle.y = 1.12; paddle.z = 1.4;
+    paddle.prevY = 1.12; paddle.prevZ = 1.4;
+    sim.setInput(0, { ...DEFAULT_INPUT, x: 0, y: 1.12, z: 1.4, manual: true, swing });
+    for (let i = 0; i < 100; i += 1) sim.step(1 / 240);
+    return sim;
+  }
+
+  it("does not return the ball when the human has not swung", () => {
+    const sim = manualContact(false);
+    expect(sim.state.ball.lastHitter).toBe(1);
+    expect(sim.state.rallyHits).toBe(0);
+  });
+
+  it("opens a short contact window after an explicit stroke", () => {
+    const sim = manualContact(true);
+    expect(sim.state.ball.lastHitter).toBe(0);
+    expect(sim.state.rallyHits).toBe(1);
+    expect(sim.state.event?.type).toBe("hit");
+  });
+
+  it("preserves automatic racket contact for AI and legacy inputs", () => {
+    const sim = new TableTennisSim(778);
+    sim.startMatch();
+    sim.state.phase = "rally";
+    sim.state.ball = {
+      p: { x: 0, y: 1.12, z: 1.37 },
+      v: { x: 0, y: 0, z: 5 },
+      spin: { x: 0, y: 0, z: 0 },
+      lastHitter: 1,
+      bounces: 1,
+      firstBounce: 0,
+      serve: false,
+    };
+    const paddle = sim.state.paddles[0];
+    paddle.x = 0; paddle.y = 1.12; paddle.z = 1.4;
+    paddle.prevY = 1.12; paddle.prevZ = 1.4;
+    sim.setInput(0, { ...DEFAULT_INPUT, x: 0, y: 1.12, z: 1.4 });
+    for (let i = 0; i < 100 && sim.state.ball.lastHitter !== 0; i += 1) sim.step(1 / 240);
+    expect(sim.state.ball.lastHitter).toBe(0);
+  });
+});
+
 describe("forward racket reach", () => {
   it("allows the player racket to advance beyond the old baseline lock", () => {
     const sim = new TableTennisSim(501);
